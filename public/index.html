@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Salta Soluciones | Servicios en Salta Capital</title>
+  <meta name="description" content="Encontrá electricistas, plomeros, técnicos, herreros, soldadores y otros servicios en Salta Capital. Solicitá atención desde Salta Soluciones.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#062957">
+  <meta property="og:title" content="Salta Soluciones | Servicios en Salta Capital">
+  <meta property="og:description" content="Encontrá el servicio que necesitás en Salta Capital.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Salta Soluciones","areaServed":"Salta Capital, Argentina","logo":"/assets/logo.png"}</script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container navbar">
+    <a class="brand" href="#inicio" aria-label="Salta Soluciones - Inicio">
+      <img id="brandLogo" class="brand-logo" src="/assets/logo.png" alt="Logo Salta Soluciones">
+      <div class="brand-copy"><div id="brandName" class="brand-name">Salta <span>Soluciones</span></div><div id="tagline" class="tagline">CONECTA · RESUELVE · CONFIANZA</div></div>
+    </a>
+    <nav class="nav-links" aria-label="Navegación principal"><a href="#inicio">Inicio</a><a href="#servicios">Servicios</a><a href="#profesionales">Profesionales</a><a href="#productos">Productos</a><a href="#calificar">Calificar</a></nav>
+    <a id="headerWhatsApp" class="wa-btn header-wa" href="#" target="_blank" rel="noreferrer" aria-label="Contactar por WhatsApp">💬 WhatsApp</a>
+  </div>
+</header>
+
+<section id="inicio" class="hero">
+  <div class="container hero-inner">
+    <div><div class="eyebrow">Salta Capital</div><h1 id="heroTitle">Encontrá el servicio que necesitás en <span class="highlight">Salta</span></h1><p id="heroSubtitle">Electricistas, plomeros, técnicos, herreros y muchos servicios más en Salta Capital.</p></div>
+    <form id="searchForm" class="search-box"><input id="serviceSearch" type="search" placeholder="¿Qué servicio necesitás hoy?" aria-label="Buscar servicio"><button class="search-btn neon-touch" type="submit">Buscar</button></form>
+  </div>
+</section>
+
+<main class="container">
+  <section id="servicios" class="section"><div class="section-head"><div><h2 id="servicesTitle">Servicios</h2><p id="servicesSubtitle" class="section-sub">Elegí directamente el servicio que necesitás.</p></div><div id="servicesCount" class="count"></div></div><div id="servicesGrid" class="services-grid"><div class="empty">Cargando servicios…</div></div></section>
+
+  <section id="profesionales" class="section"><div class="section-head"><div><h2>Profesionales disponibles</h2><p class="section-sub">Elegí un profesional según servicio, experiencia, zona y disponibilidad.</p></div></div><div id="professionalsGrid" class="card-grid"><div class="empty">Cargando profesionales…</div></div></section>
+
+  <section class="section booking-layout">
+    <div class="form-card"><h2>Reservá tu atención</h2><p class="section-sub">Completá tus datos. La ubicación GPS es opcional.</p>
+      <form id="bookingForm" class="form-grid">
+        <label class="field">Nombre<input id="firstName" required autocomplete="given-name"></label><label class="field">Apellido<input id="lastName" required autocomplete="family-name"></label>
+        <label class="field">WhatsApp<input id="clientWhatsApp" required inputmode="tel" autocomplete="tel"></label><label class="field">Servicio<select id="bookingService" required><option value="">Seleccioná un servicio</option></select></label>
+        <label class="field span-2">Dirección / numeración<input id="address" required autocomplete="street-address" placeholder="Ej.: Av. Belgrano 1234"></label>
+        <label class="field span-2">Descripción<textarea id="description" placeholder="Contanos qué necesitás solucionar"></textarea></label>
+        <div class="span-2 gps-row"><button id="gpsBtn" class="gps-btn neon-touch" type="button">📍 Enviar ubicación GPS</button><span id="gpsStatus" class="gps-status">Opcional</span></div>
+        <label class="span-2 check-row"><input id="consentContact" type="checkbox" required><span>Confirmo que deseo recibir una llamada o mensaje para coordinar la atención.</span></label>
+        <div class="span-2"><button class="primary-btn neon-touch" type="submit">Confirmar solicitud</button><div id="bookingStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
+      </form>
+    </div>
+    <div id="calificar" class="rating-card"><h2>Calificá al profesional</h2><p class="section-sub">Las calificaciones se revisan antes de publicarse. Si elegís menos de 5 estrellas, el motivo es obligatorio.</p>
+      <form id="ratingForm" class="form-grid">
+        <label class="field span-2">Profesional<select id="ratingProfessional" required><option value="">Seleccioná un profesional</option></select></label>
+        <label class="field span-2">Código de solicitud (opcional)<input id="requestCode" placeholder="Ej.: SS-20260904-ABCDE"></label>
+        <div class="span-2"><div class="stars-picker" id="starsPicker" aria-label="Calificación de 1 a 5 estrellas"></div></div>
+        <label id="ratingCommentWrap" class="field span-2 hidden">¿Por qué la calificación fue menor a 5?<textarea id="ratingComment" placeholder="Explicá brevemente qué ocurrió"></textarea></label>
+        <div class="span-2"><button class="primary-btn neon-touch" type="submit">Enviar calificación</button><div id="ratingStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="productos" class="section"><div class="section-head"><div><h2>Productos en venta</h2><p class="section-sub">Precio público y galería de hasta 5 fotos por producto.</p></div></div><div id="productsGrid" class="product-grid"><div class="empty">Cargando productos…</div></div></section>
+</main>
+
+<footer class="footer"><div class="container footer-inner"><div><strong>Salta Soluciones</strong><br><small>Servicios y profesionales en Salta Capital.</small></div><a id="footerWhatsApp" class="wa-btn" href="#" target="_blank" rel="noreferrer">💬 WhatsApp</a></div></footer>
+
+<div id="productModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalProductName"><div class="modal-dialog"><div class="modal-head"><div><div class="eyebrow" style="color:#6d829b">Producto</div><h2 id="modalProductName" style="margin:4px 0 0;color:#062957"></h2></div><button id="closeModal" class="close-btn" type="button" aria-label="Cerrar">×</button></div><div class="product-detail"><div><div id="mainProductPhoto" class="main-photo">📦</div><div id="productThumbs" class="thumbs"></div></div><div><div class="section-sub">Precio público</div><div id="modalPrice" class="detail-price"></div><p id="modalDescription" class="detail-desc"></p><a id="modalWhatsApp" class="wa-btn detail-wa" href="#" target="_blank" rel="noreferrer">💬 Consultar por WhatsApp</a></div></div></div></div>
+
+<script src="/js/app.js" defer></script>
+</body></html>
