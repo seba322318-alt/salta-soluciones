@@ -101,11 +101,76 @@
   });
 
   $('#bookingForm').addEventListener('submit',async e=>{
-    e.preventDefault(); if(!e.currentTarget.reportValidity())return; const btn=e.currentTarget.querySelector('button[type=submit]'); btn.disabled=true; $('#bookingStatus').textContent='Enviando solicitud…';
-    try{const res=await fetch('/api/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({firstName:$('#firstName').value,lastName:$('#lastName').value,whatsapp:$('#clientWhatsApp').value,address:$('#address').value,description:$('#description').value,serviceId:$('#bookingService').value,lat:state.lat,lng:state.lng,consentContact:$('#consentContact').checked})});const out=await res.json();if(!res.ok)throw new Error(out.error||'No se pudo enviar');$('#bookingStatus').innerHTML=`✅ Solicitud recibida. Código: <strong>${esc(out.code)}</strong>`;e.currentTarget.reset();state.lat=state.lng=null;$('#gpsStatus').textContent='Opcional';}catch(err){$('#bookingStatus').textContent=`Error: ${err.message}`;}finally{btn.disabled=false;}
+    e.preventDefault();
+    const form = e.currentTarget;
+    if(!form.reportValidity()) return;
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    $('#bookingStatus').textContent = 'Enviando solicitud…';
+    try {
+      const res = await fetch('/api/request',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          firstName:$('#firstName').value,
+          lastName:$('#lastName').value,
+          whatsapp:$('#clientWhatsApp').value,
+          address:$('#address').value,
+          description:$('#description').value,
+          serviceId:$('#bookingService').value,
+          lat:state.lat,
+          lng:state.lng,
+          consentContact:$('#consentContact').checked
+        })
+      });
+      const out = await res.json();
+      if(!res.ok) throw new Error(out.error||'No se pudo enviar');
+
+      form.reset();
+      state.lat = null;
+      state.lng = null;
+      $('#gpsStatus').textContent = 'Opcional';
+      $('#bookingStatus').innerHTML = `✅ Solicitud recibida. Código: <strong>${esc(out.code)}</strong>`;
+    } catch(err) {
+      $('#bookingStatus').textContent = `Error: ${err.message}`;
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   function renderRatingPicker(){const wrap=$('#starsPicker');wrap.innerHTML='';for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.className='star-btn';b.textContent='★';b.setAttribute('aria-label',`${i} estrellas`);b.addEventListener('click',()=>{state.selectedStars=i;[...wrap.children].forEach((x,j)=>x.classList.toggle('active',j<i));$('#ratingCommentWrap').classList.toggle('hidden',i===5);if(i===5)$('#ratingComment').value='';});wrap.appendChild(b)}}
-  $('#ratingForm').addEventListener('submit',async e=>{e.preventDefault();if(!e.currentTarget.reportValidity())return;if(!state.selectedStars){$('#ratingStatus').textContent='Elegí de 1 a 5 estrellas.';return;}if(state.selectedStars<5&&!$('#ratingComment').value.trim()){ $('#ratingStatus').textContent='Explicá el motivo de la calificación.';return;}const btn=e.currentTarget.querySelector('button[type=submit]');btn.disabled=true;try{const res=await fetch('/api/rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({professionalId:$('#ratingProfessional').value,stars:state.selectedStars,comment:$('#ratingComment').value,requestCode:$('#requestCode').value})});const out=await res.json();if(!res.ok)throw new Error(out.error||'No se pudo enviar');$('#ratingStatus').textContent='✅ '+out.message;e.currentTarget.reset();state.selectedStars=0;renderRatingPicker();$('#ratingCommentWrap').classList.add('hidden');}catch(err){$('#ratingStatus').textContent='Error: '+err.message;}finally{btn.disabled=false;}});
+  $('#ratingForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const form = e.currentTarget;
+    if(!form.reportValidity()) return;
+    if(!state.selectedStars){$('#ratingStatus').textContent='Elegí de 1 a 5 estrellas.';return;}
+    if(state.selectedStars<5&&!$('#ratingComment').value.trim()){ $('#ratingStatus').textContent='Explicá el motivo de la calificación.';return;}
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try{
+      const res=await fetch('/api/rating',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          professionalId:$('#ratingProfessional').value,
+          stars:state.selectedStars,
+          comment:$('#ratingComment').value,
+          requestCode:$('#requestCode').value
+        })
+      });
+      const out=await res.json();
+      if(!res.ok)throw new Error(out.error||'No se pudo enviar');
+
+      form.reset();
+      state.selectedStars=0;
+      renderRatingPicker();
+      $('#ratingCommentWrap').classList.add('hidden');
+      $('#ratingStatus').textContent='✅ '+out.message;
+    }catch(err){
+      $('#ratingStatus').textContent='Error: '+err.message;
+    }finally{
+      btn.disabled=false;
+    }
+  });
   load();
 })();
