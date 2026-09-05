@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Salta Soluciones | Servicios en Salta Capital</title>
-  <meta name="description" content="Encontrá electricistas, plomeros, técnicos, herreros, soldadores y otros servicios en Salta Capital. Solicitá atención desde Salta Soluciones.">
+  <title>Salta Soluciones | Profesionales y servicios en Salta</title>
+  <meta name="description" content="Encontrá profesionales y servicios en Salta. Elegí a quién contactar, hablá directamente por WhatsApp y calificá el trabajo desde Salta Soluciones.">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta name="theme-color" content="#062957">
-  <meta property="og:title" content="Salta Soluciones | Servicios en Salta Capital">
-  <meta property="og:description" content="Encontrá el servicio que necesitás en Salta Capital.">
+  <meta property="og:title" content="Salta Soluciones | Profesionales y servicios en Salta">
+  <meta property="og:description" content="Elegí el servicio y contactá directamente al profesional que prefieras en Salta.">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="/assets/logo.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/assets/favicon.png">
   <link rel="stylesheet" href="/css/styles.css">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Salta Soluciones","areaServed":"Salta Capital, Argentina","logo":"/assets/logo.png"}</script>
+  <!-- SEO_DYNAMIC_HEAD -->
 </head>
 <body>
 <header class="site-header">
@@ -21,8 +23,8 @@
       <img id="brandLogo" class="brand-logo" src="/assets/logo.png" alt="Logo Salta Soluciones">
       <div class="brand-copy"><div id="brandName" class="brand-name">Salta <span>Soluciones</span></div><div id="tagline" class="tagline">CONECTA · RESUELVE · CONFIANZA</div></div>
     </a>
-    <nav class="nav-links" aria-label="Navegación principal"><a href="#inicio">Inicio</a><a href="#servicios">Servicios</a><a href="#profesionales">Profesionales</a><a href="#productos">Productos</a><a href="#calificar">Calificar</a></nav>
-    <a id="headerWhatsApp" class="wa-btn header-wa" href="#" target="_blank" rel="noreferrer" aria-label="Contactar por WhatsApp">💬 WhatsApp</a>
+    <nav class="nav-links" aria-label="Navegación principal"><a href="#inicio">Inicio</a><a href="#servicios">Servicios</a><a href="#profesionales">Profesionales</a><a href="#mi-solicitud">Mi solicitud</a><a href="#productos">Productos</a></nav>
+    <a id="headerWhatsApp" class="wa-btn header-wa" href="#" target="_blank" rel="noreferrer" aria-label="Contactar a Salta Soluciones por WhatsApp">💬 WhatsApp</a>
   </div>
 </header>
 
@@ -34,39 +36,73 @@
 </section>
 
 <main class="container">
-  <section id="servicios" class="section"><div class="section-head"><div><h2 id="servicesTitle">Servicios</h2><p id="servicesSubtitle" class="section-sub">Elegí directamente el servicio que necesitás.</p></div><div id="servicesCount" class="count"></div></div><div id="servicesGrid" class="services-grid"><div class="empty">Cargando servicios…</div></div></section>
-
-  <section id="profesionales" class="section"><div class="section-head"><div><h2>Profesionales disponibles</h2><p class="section-sub">Elegí un profesional según servicio, experiencia, zona y disponibilidad.</p></div></div><div id="professionalsGrid" class="card-grid"><div class="empty">Cargando profesionales…</div></div></section>
-
-  <section class="section booking-layout">
-    <div class="form-card"><h2>Reservá tu atención</h2><p class="section-sub">Completá tus datos. La ubicación GPS es opcional.</p>
-      <form id="bookingForm" class="form-grid">
-        <label class="field">Nombre<input id="firstName" required autocomplete="given-name"></label><label class="field">Apellido<input id="lastName" required autocomplete="family-name"></label>
-        <label class="field">WhatsApp<input id="clientWhatsApp" required inputmode="tel" autocomplete="tel"></label><label class="field">Servicio<select id="bookingService" required><option value="">Seleccioná un servicio</option></select></label>
-        <label class="field span-2">Dirección / numeración<input id="address" required autocomplete="street-address" placeholder="Ej.: Av. Belgrano 1234"></label>
-        <label class="field span-2">Descripción<textarea id="description" placeholder="Contanos qué necesitás solucionar"></textarea></label>
-        <div class="span-2 gps-row"><button id="gpsBtn" class="gps-btn neon-touch" type="button">📍 Enviar ubicación GPS</button><span id="gpsStatus" class="gps-status">Opcional</span></div>
-        <label class="span-2 check-row"><input id="consentContact" type="checkbox" required><span>Confirmo que deseo recibir una llamada o mensaje para coordinar la atención.</span></label>
-        <div class="span-2"><button class="primary-btn neon-touch" type="submit">Confirmar solicitud</button><div id="bookingStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
-      </form>
+  <section class="section welcome-section" aria-labelledby="welcomeTitle">
+    <div class="welcome-card">
+      <div class="welcome-icon">🤝</div>
+      <div class="welcome-copy"><div class="eyebrow welcome-eyebrow">Salta Soluciones</div><h2 id="welcomeTitle">Bienvenido a Salta Soluciones</h2><p id="welcomeText">Encontrá profesionales y servicios de confianza en un solo lugar. Elegí al profesional que mejor se adapte a vos y contactalo directamente. Si necesitás orientación, también podés hablar con Salta Soluciones.</p><p class="welcome-note">Salta Soluciones conecta clientes con profesionales. La contratación y coordinación del servicio se realiza directamente entre ambas partes.</p></div>
+      <a id="welcomeWhatsApp" class="wa-btn welcome-wa" href="#" target="_blank" rel="noreferrer">💬 Contactar a Salta Soluciones</a>
     </div>
-    <div id="calificar" class="rating-card"><h2>Calificá al profesional</h2><p class="section-sub">Las calificaciones se revisan antes de publicarse. Si elegís menos de 5 estrellas, el motivo es obligatorio.</p>
-      <form id="ratingForm" class="form-grid">
-        <label class="field span-2">Profesional<select id="ratingProfessional" required><option value="">Seleccioná un profesional</option></select></label>
-        <label class="field span-2">Código de solicitud (opcional)<input id="requestCode" placeholder="Ej.: SS-20260904-ABCDE"></label>
-        <div class="span-2"><div class="stars-picker" id="starsPicker" aria-label="Calificación de 1 a 5 estrellas"></div></div>
-        <label id="ratingCommentWrap" class="field span-2 hidden">¿Por qué la calificación fue menor a 5?<textarea id="ratingComment" placeholder="Explicá brevemente qué ocurrió"></textarea></label>
-        <div class="span-2"><button class="primary-btn neon-touch" type="submit">Enviar calificación</button><div id="ratingStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
-      </form>
+  </section>
+
+  <section id="servicios" class="section"><div class="section-head"><div><h2 id="servicesTitle">Servicios disponibles</h2><p id="servicesSubtitle" class="section-sub">Elegí el servicio que necesitás para ver profesionales disponibles.</p></div><div id="servicesCount" class="count"></div></div><div id="servicesGrid" class="services-grid"><div class="empty">Cargando servicios…</div></div></section>
+
+  <section id="profesionales" class="section"><div class="section-head"><div><h2>Profesionales disponibles</h2><p id="professionalsSubtitle" class="section-sub">Elegí un profesional y contactalo directamente por WhatsApp. El contacto queda registrado en Salta Soluciones para que puedas hacer seguimiento y calificar el trabajo.</p></div><button id="clearProfessionalFilter" class="outline-btn compact hidden" type="button">Ver todos</button></div><div id="professionalsGrid" class="card-grid"><div class="empty">Cargando profesionales…</div></div></section>
+
+  <section id="mi-solicitud" class="section">
+    <div class="tracking-layout">
+      <div class="form-card tracking-card"><div class="eyebrow welcome-eyebrow">Seguimiento</div><h2>Mi solicitud</h2><p class="section-sub">Consultá si el profesional asistió, confirmá si el trabajo se realizó y calificá de 1 a 5 estrellas.</p>
+        <form id="trackingForm" class="form-grid">
+          <label class="field">Código de solicitud<input id="trackingCode" required placeholder="Ej.: SS-20260905-ABCDE" autocomplete="off"></label>
+          <label class="field">Tu WhatsApp<input id="trackingWhatsApp" required inputmode="tel" autocomplete="tel"></label>
+          <div class="span-2"><button class="primary-btn neon-touch" type="submit">Consultar estado</button><div id="trackingStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
+        </form>
+      </div>
+      <div id="trackingResult" class="tracking-result empty">Ingresá tu código y WhatsApp para ver el seguimiento.</div>
+    </div>
+  </section>
+
+
+  <section id="como-funciona" class="section seo-info-section">
+    <div class="section-head"><div><h2>Cómo funciona Salta Soluciones</h2><p class="section-sub">Una forma simple de encontrar y contactar profesionales en Salta.</p></div></div>
+    <div class="seo-steps">
+      <article class="seo-step"><strong>1. Elegí el servicio</strong><p>Buscá la categoría que necesitás y compará profesionales disponibles.</p></article>
+      <article class="seo-step"><strong>2. Contactá directamente</strong><p>Elegí al profesional y abrí una conversación directa por WhatsApp.</p></article>
+      <article class="seo-step"><strong>3. Confirmá y calificá</strong><p>Después del servicio podés confirmar la visita, indicar si el trabajo se realizó y dejar una calificación.</p></article>
+    </div>
+  </section>
+
+  <section class="section seo-info-section" aria-labelledby="faqTitle">
+    <div class="section-head"><div><h2 id="faqTitle">Preguntas frecuentes</h2><p class="section-sub">Información útil para clientes de Salta Soluciones.</p></div></div>
+    <div class="faq-grid">
+      <article class="faq-item"><h3>¿Cómo contacto a un profesional?</h3><p>Elegí un servicio, seleccioná un profesional y tocá “Contactar por WhatsApp”. El contacto queda registrado para poder hacer seguimiento.</p></article>
+      <article class="faq-item"><h3>¿Salta Soluciones asigna al profesional?</h3><p>No necesariamente. El cliente puede elegir directamente al profesional que prefiera según servicio, experiencia, zona y disponibilidad.</p></article>
+      <article class="faq-item"><h3>¿Cómo sé si mi solicitud quedó registrada?</h3><p>Al iniciar el contacto recibís un código de solicitud. Con ese código y tu WhatsApp podés consultar el estado en “Mi solicitud”.</p></article>
+      <article class="faq-item"><h3>¿Cómo se publican las calificaciones?</h3><p>La calificación se vincula a un trabajo confirmado y se revisa antes de mostrarse públicamente.</p></article>
     </div>
   </section>
 
   <section id="productos" class="section"><div class="section-head"><div><h2>Productos en venta</h2><p class="section-sub">Precio público y galería de hasta 5 fotos por producto.</p></div></div><div id="productsGrid" class="product-grid"><div class="empty">Cargando productos…</div></div></section>
 </main>
 
-<footer class="footer"><div class="container footer-inner"><div><strong>Salta Soluciones</strong><br><small>Servicios y profesionales en Salta Capital.</small></div><a id="footerWhatsApp" class="wa-btn" href="#" target="_blank" rel="noreferrer">💬 WhatsApp</a></div></footer>
+<footer class="footer"><div class="container footer-inner"><div><strong>Salta Soluciones</strong><br><small>Conectamos clientes con profesionales en Salta.</small></div><a id="footerWhatsApp" class="wa-btn" href="#" target="_blank" rel="noreferrer">💬 WhatsApp</a></div></footer>
 
 <div id="productModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalProductName"><div class="modal-dialog"><div class="modal-head"><div><div class="eyebrow" style="color:#6d829b">Producto</div><h2 id="modalProductName" style="margin:4px 0 0;color:#062957"></h2></div><button id="closeModal" class="close-btn" type="button" aria-label="Cerrar">×</button></div><div class="product-detail"><div><div id="mainProductPhoto" class="main-photo">📦</div><div id="productThumbs" class="thumbs"></div></div><div><div class="section-sub">Precio público</div><div id="modalPrice" class="detail-price"></div><p id="modalDescription" class="detail-desc"></p><a id="modalWhatsApp" class="wa-btn detail-wa" href="#" target="_blank" rel="noreferrer">💬 Consultar por WhatsApp</a></div></div></div></div>
+
+<div id="contactModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+  <div class="modal-dialog contact-dialog">
+    <div class="modal-head"><div><div class="eyebrow" style="color:#6d829b">Contacto directo</div><h2 id="contactModalTitle" style="margin:4px 0 0;color:#062957">Contactar profesional</h2><p id="contactProfessionalInfo" class="section-sub" style="margin:5px 0 0"></p></div><button id="closeContactModal" class="close-btn" type="button" aria-label="Cerrar">×</button></div>
+    <form id="directContactForm" class="form-grid contact-form">
+      <input id="contactProfessionalId" type="hidden">
+      <label class="field">Nombre<input id="contactFirstName" required autocomplete="given-name"></label><label class="field">Apellido<input id="contactLastName" required autocomplete="family-name"></label>
+      <label class="field">Tu WhatsApp<input id="contactWhatsApp" required inputmode="tel" autocomplete="tel"></label><label class="field">Servicio<select id="contactService" required><option value="">Seleccioná un servicio</option></select></label>
+      <label class="field span-2">Dirección / zona <span class="optional-label">(opcional)</span><input id="contactAddress" autocomplete="street-address" placeholder="Ej.: Zona Sur, Av. Belgrano 1234"></label>
+      <label class="field span-2">¿Qué necesitás? <span class="optional-label">(opcional)</span><textarea id="contactDescription" placeholder="Contale brevemente al profesional qué necesitás"></textarea></label>
+      <div class="span-2 gps-row"><button id="contactGpsBtn" class="gps-btn neon-touch" type="button">📍 Agregar ubicación GPS</button><span id="contactGpsStatus" class="gps-status">Opcional</span></div>
+      <label class="span-2 check-row"><input id="contactConsent" type="checkbox" required><span>Acepto que Salta Soluciones registre este contacto para permitir el seguimiento y la calificación del servicio.</span></label>
+      <div class="span-2"><button class="primary-btn neon-touch" type="submit">💬 Continuar a WhatsApp</button><div id="contactStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
+    </form>
+  </div>
+</div>
 
 <script src="/js/app.js" defer></script>
 </body></html>

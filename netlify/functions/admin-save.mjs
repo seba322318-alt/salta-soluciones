@@ -19,8 +19,10 @@ function sanitizeState(input) {
       heroHighlight: str(settings.heroHighlight, 60),
       heroSubtitle: str(settings.heroSubtitle, 350),
       searchPlaceholder: str(settings.searchPlaceholder, 120),
+      welcomeTitle: str(settings.welcomeTitle, 120) || "Bienvenido a Salta Soluciones",
+      welcomeText: str(settings.welcomeText, 600),
       servicesTitle: str(settings.servicesTitle, 80),
-      servicesSubtitle: str(settings.servicesSubtitle, 180),
+      servicesSubtitle: str(settings.servicesSubtitle, 220),
       heroStart: /^#[0-9a-fA-F]{6}$/.test(settings.heroStart) ? settings.heroStart : "#061f43",
       heroEnd: /^#[0-9a-fA-F]{6}$/.test(settings.heroEnd) ? settings.heroEnd : "#0a4b8f",
       titleColor: /^#[0-9a-fA-F]{6}$/.test(settings.titleColor) ? settings.titleColor : "#ffffff",
@@ -34,33 +36,23 @@ function sanitizeState(input) {
     },
     services: services.slice(0, 200).map((s) => ({
       id: str(s.id, 100) || crypto.randomUUID(),
-      name: str(s.name, 80),
-      slug: slugify(str(s.slug || s.name, 100)),
-      description: str(s.description, 220),
-      icon: str(s.icon, 20),
-      imageUrl: str(s.imageUrl, 400),
-      whatsapp: cleanPhone(s.whatsapp),
-      active: s.active !== false
+      name: str(s.name, 80), slug: slugify(str(s.slug || s.name, 100)),
+      description: str(s.description, 220), icon: str(s.icon, 20), imageUrl: str(s.imageUrl, 400),
+      whatsapp: cleanPhone(s.whatsapp), active: s.active !== false
     })).filter((s) => s.name),
     professionals: professionals.slice(0, 500).map((p) => ({
-      id: str(p.id, 100) || crypto.randomUUID(),
-      photoUrl: str(p.photoUrl, 400),
-      name: str(p.name, 120),
+      id: str(p.id, 100) || crypto.randomUUID(), photoUrl: str(p.photoUrl, 400), name: str(p.name, 120),
       serviceIds: Array.isArray(p.serviceIds) ? p.serviceIds.map((x) => str(x, 100)).slice(0, 20) : [],
-      yearsExperience: Math.max(0, Math.min(70, Number(p.yearsExperience) || 0)),
-      whatsapp: cleanPhone(p.whatsapp),
-      zone: str(p.zone, 160),
-      availability: str(p.availability, 80),
-      privateNotes: str(p.privateNotes, 1500),
+      yearsExperience: Math.max(0, Math.min(70, Number(p.yearsExperience) || 0)), whatsapp: cleanPhone(p.whatsapp),
+      zone: str(p.zone, 160), availability: str(p.availability, 80), privateNotes: str(p.privateNotes, 1500),
+      monthlyFee: str(p.monthlyFee, 60), nextPayment: str(p.nextPayment, 20),
+      portalToken: str(p.portalToken, 160) || (crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "")),
+      paymentStatus: ["Al día", "Pendiente", "Vencido"].includes(p.paymentStatus) ? p.paymentStatus : "Al día",
       status: ["Activo", "Inactivo", "Suspendido"].includes(p.status) ? p.status : "Activo"
     })).filter((p) => p.name),
     products: products.slice(0, 500).map((p) => ({
-      id: str(p.id, 100) || crypto.randomUUID(),
-      name: str(p.name, 140),
-      description: str(p.description, 1500),
-      price: str(p.price, 60),
-      whatsapp: cleanPhone(p.whatsapp),
-      active: p.active !== false,
+      id: str(p.id, 100) || crypto.randomUUID(), name: str(p.name, 140), description: str(p.description, 1500),
+      price: str(p.price, 60), whatsapp: cleanPhone(p.whatsapp), active: p.active !== false,
       images: Array.isArray(p.images) ? p.images.map((x) => str(x, 400)).filter(Boolean).slice(0, 5) : []
     })).filter((p) => p.name)
   };
@@ -73,32 +65,39 @@ export default async (req) => {
   if (!body) return Response.json({ error: "Datos inválidos" }, { status: 400 });
 
   if (body.action === "saveState") {
-    const clean = sanitizeState(body.state);
-    await saveState(clean);
-    return Response.json({ ok: true, state: clean });
+    const clean = sanitizeState(body.state); await saveState(clean); return Response.json({ ok: true, state: clean });
   }
 
-  if (body.action === "requestUpdate") {
-    const store = getStore({ name: "salta-requests", consistency: "strong" });
-    const row = await store.get(str(body.id, 100), { type: "json", consistency: "strong" });
-    if (!row) return Response.json({ error: "Solicitud no encontrada" }, { status: 404 });
+  if (body.action === "regenerateProfessionalToken") {
     const state = await getState();
-    const statuses = ["Nueva", "Contactada", "Asignada", "Finalizada", "Cancelada"];
-    if (statuses.includes(body.status)) row.status = body.status;
-    const professionalId = str(body.professionalId, 100);
-    row.professionalId = state.professionals.some((p) => p.id === professionalId) ? professionalId : null;
-    row.updatedAt = new Date().toISOString();
-    await store.setJSON(row.id, row);
-    return Response.json({ ok: true, request: row });
+    const id = str(body.id, 120);
+    const professional = (state.professionals || []).find((p) => p.id === id);
+    if (!professional) return Response.json({ error: "Profesional no encontrado" }, { status: 404 });
+    professional.portalToken = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
+    await saveState(state);
+    return Response.json({ ok: true, portalToken: professional.portalToken });
+  }
+
+  if (body.action === "ensureEvaluationToken" || body.action === "regenerateEvaluationToken") {
+    const id = str(body.id, 120);
+    const store = getStore({ name: "salta-requests", consistency: "strong" });
+    const row = await store.get(id, { type: "json", consistency: "strong" });
+    if (!row) return Response.json({ error: "Solicitud no encontrada" }, { status: 404 });
+    if (!row.evaluationToken || body.action === "regenerateEvaluationToken") {
+      row.evaluationToken = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
+      row.updatedAt = new Date().toISOString();
+      await store.setJSON(row.id, row);
+    }
+    const evaluationIndex = getStore({ name: "salta-evaluation-index", consistency: "strong" });
+    await evaluationIndex.setJSON(row.evaluationToken, { id: row.id });
+    return Response.json({ ok: true, evaluationToken: row.evaluationToken });
   }
 
   if (body.action === "ratingModerate") {
     const store = getStore({ name: "salta-ratings", consistency: "strong" });
     const row = await store.get(str(body.id, 100), { type: "json", consistency: "strong" });
     if (!row) return Response.json({ error: "Calificación no encontrada" }, { status: 404 });
-    row.approved = bool(body.approved);
-    row.moderatedAt = new Date().toISOString();
-    await store.setJSON(row.id, row);
+    row.approved = bool(body.approved); row.moderatedAt = new Date().toISOString(); await store.setJSON(row.id, row);
     return Response.json({ ok: true, rating: row });
   }
 

@@ -13,16 +13,17 @@ export default async () => {
   const summary = {};
   for (const r of approved) {
     const row = summary[r.professionalId] || { count: 0, total: 0 };
-    row.count += 1;
-    row.total += Number(r.stars) || 0;
-    summary[r.professionalId] = row;
+    row.count += 1; row.total += Number(r.stars) || 0; summary[r.professionalId] = row;
   }
-  for (const [id, row] of Object.entries(summary)) row.average = row.count ? Math.round((row.total / row.count) * 10) / 10 : 0;
+  for (const row of Object.values(summary)) row.average = row.count ? Math.round((row.total / row.count) * 10) / 10 : 0;
 
   const publicState = {
     settings: state.settings,
     services: state.services.filter((x) => x.active !== false),
-    professionals: state.professionals.filter((x) => x.status === "Activo"),
+    professionals: state.professionals.filter((x) => x.status === "Activo").map(p=>({
+      id:p.id, photoUrl:p.photoUrl, name:p.name, serviceIds:p.serviceIds, yearsExperience:p.yearsExperience,
+      zone:p.zone, availability:p.availability, status:p.status
+    })),
     products: state.products.filter((x) => x.active !== false),
     ratingsSummary: summary
   };

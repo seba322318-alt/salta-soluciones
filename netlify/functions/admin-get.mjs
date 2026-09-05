@@ -1,6 +1,6 @@
 import { getStore } from "@netlify/blobs";
 import { requireAdmin } from "./_auth.mjs";
-import { getState } from "./_state.mjs";
+import { getState, saveState } from "./_state.mjs";
 
 async function readAll(storeName, limit = 500) {
   const store = getStore({ name: storeName, consistency: "strong" });
@@ -17,6 +17,11 @@ async function readAll(storeName, limit = 500) {
 export default async (req) => {
   if (!(await requireAdmin(req))) return Response.json({ error: "No autorizado" }, { status: 401 });
   const [state, requests, ratings] = await Promise.all([getState(), readAll("salta-requests"), readAll("salta-ratings")]);
+  let changed = false;
+  for (const p of state.professionals || []) {
+    if (!p.portalToken) { p.portalToken = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", ""); changed = true; }
+  }
+  if (changed) await saveState(state);
   return Response.json({ state, requests, ratings }, { headers: { "Cache-Control": "no-store" } });
 };
 

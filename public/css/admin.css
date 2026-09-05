@@ -7,3 +7,24 @@ body.admin-body{background:var(--admin-bg);color:#0b2a52}.admin-shell{display:gr
 .image-slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}.image-slot{border:1px dashed #bcd1e6;border-radius:9px;min-height:105px;background:#f8fbff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:7px;font-size:11px;color:#667d96;text-align:center}.image-slot img{width:100%;height:75px;object-fit:cover;border-radius:7px}.image-slot input{width:100%;font-size:10px}.preview-hero{border-radius:14px;padding:24px;background:linear-gradient(110deg,var(--p-start,#061f43),var(--p-end,#0a4b8f));color:#fff;margin-top:12px}.preview-hero h3{font-size:27px;color:var(--p-title,#fff);margin:0}.preview-hero strong{color:var(--p-highlight,#35d1ff);text-shadow:0 0 var(--p-glow,18px) rgba(53,209,255,.75)}.preview-hero p{color:#dbeaff}.notice{padding:10px 12px;border-radius:9px;background:#f1f8ff;border:1px solid #cbe4fa;color:#3e5d7d;font-size:12px}.modal-admin{position:fixed;inset:0;z-index:100;background:rgba(3,22,47,.6);display:flex;align-items:center;justify-content:center;padding:18px}.modal-admin .dialog{width:min(820px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:15px;padding:17px}.modal-admin.hidden{display:none}.dialog-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.dialog-head button{border:1px solid var(--admin-line);background:#fff;width:40px;height:40px;border-radius:8px;font-size:20px}
 @media(max-width:900px){.admin-shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.side-brand{display:flex;align-items:center;gap:12px;text-align:left}.side-brand img{width:100px;height:65px}.side-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.side-bottom{margin-top:12px}.admin-main{padding:15px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid-admin{grid-template-columns:1fr}.full{grid-column:auto}.image-slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.side-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:1fr}.admin-top{align-items:flex-start}.image-slots{grid-template-columns:1fr 1fr}}
+
+/* Gestión operativa de solicitudes */
+.workflow-note{margin:0 0 14px;padding:11px 13px;border:1px solid #cbe4fa;border-radius:10px;background:#f5faff;color:#35597d;font-size:12px;line-height:1.45}
+.requests-table{min-width:1180px}
+.requests-table select{min-width:132px;border:1px solid var(--admin-line);border-radius:7px;background:#fff;color:#173556;padding:8px 7px;font-size:12px}
+.request-desc{margin-top:5px;max-width:210px;color:var(--admin-muted);font-size:11px;line-height:1.35;white-space:normal}
+.request-actions{display:grid;grid-template-columns:repeat(2,minmax(118px,1fr));gap:6px;min-width:250px}
+.request-actions .mini-btn{white-space:nowrap}
+.wa-mini{border-color:#9cdec0!important;color:#08783e!important;background:#f4fff9!important}
+.dispatch-mini{border-color:#9fd6ff!important;color:#075fae!important;background:#f4faff!important}
+.notify-mini{border-color:#b9e4aa!important;color:#397917!important;background:#f8fff5!important}
+.save-mini{font-weight:900!important}
+@media(max-width:900px){.request-actions{grid-template-columns:1fr;min-width:155px}.requests-table{min-width:1060px}}
+
+/* V2: modelo directo cliente-profesional */
+.request-filters{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 13px}.request-filters .mini-btn.active{background:#0b6fb9;color:#fff;border-color:#0b6fb9}.requests-table{min-width:1260px}.pros-table{min-width:1280px}.requests-table td{vertical-align:top}.requests-table .pill{white-space:nowrap}.request-desc{margin-top:5px;max-width:220px;color:var(--admin-muted);font-size:11px;line-height:1.35;white-space:normal}.wa-mini{border-color:#9cdec0!important;color:#08783e!important;background:#f4fff9!important}.workflow-note{margin:0 0 14px;padding:11px 13px;border:1px solid #cbe4fa;border-radius:10px;background:#f5faff;color:#35597d;font-size:12px;line-height:1.45}
+
+/* Enlaces privados y acciones de seguimiento */
+.portal-actions,.request-actions{min-width:150px;align-items:flex-start}
+.portal-actions .mini-btn,.request-actions .mini-btn{white-space:nowrap}
+.requests-table td:last-child{min-width:180px}

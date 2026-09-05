@@ -7,6 +7,14 @@
   node_bundler = "esbuild"
 
 [[edge_functions]]
+  function = "seo-public"
+  path = "/"
+
+[[edge_functions]]
+  function = "seo-public"
+  path = "/index.html"
+
+[[edge_functions]]
   function = "protect-admin"
   path = "/admin/*"
 
@@ -33,3 +41,30 @@
   from = "/admin"
   to = "/admin/"
   status = 301
+
+[[headers]]
+  for = "/profesional.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/api/client-status"
+  [headers.values]
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/api/professional-portal"
+  [headers.values]
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/evaluar.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/api/client-evaluation"
+  [headers.values]
+    Cache-Control = "no-store"

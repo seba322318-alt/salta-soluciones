@@ -11,7 +11,7 @@ export default async (req) => {
   const stars = Number(body?.stars);
   const comment = text(body?.comment, 800);
   if (!professional || !Number.isInteger(stars) || stars < 1 || stars > 5) return Response.json({ error: "Calificación inválida" }, { status: 400 });
-  if (stars < 5 && !comment) return Response.json({ error: "Si la calificación es menor a 5 estrellas, explicá el motivo" }, { status: 400 });
+  if (stars <= 3 && !comment) return Response.json({ error: "Con 1, 2 o 3 estrellas, contanos brevemente qué ocurrió" }, { status: 400 });
   const id = crypto.randomUUID();
   const rating = {
     id,

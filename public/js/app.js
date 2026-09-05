@@ -1,22 +1,24 @@
 (() => {
   const $ = (s) => document.querySelector(s);
-  const state = { data: null, selectedStars: 0, lat: null, lng: null };
+  const state = { data: null, selectedServiceId: '', lat: null, lng: null, tracking: null, trackingStars: 0 };
   const esc = (v='') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const cleanPhone = (v='') => String(v).replace(/[^0-9]/g,'');
   const waLink = (phone, message='') => `https://wa.me/${cleanPhone(phone)}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
 
-  function touchGlow(el) {
-    el.classList.add('neon-active');
-    setTimeout(() => el.classList.remove('neon-active'), 520);
-  }
+  function touchGlow(el) { el.classList.add('neon-active'); setTimeout(() => el.classList.remove('neon-active'), 520); }
   document.addEventListener('pointerdown', e => { const el = e.target.closest('.neon-touch,.service-card,.product-card'); if (el) touchGlow(el); });
+
+  async function jsonFetch(url, options={}) {
+    const res = await fetch(url, options);
+    const out = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(out.error || 'No se pudo completar la operación');
+    return out;
+  }
 
   async function load() {
     try {
-      const res = await fetch('/api/data', { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error('No se pudo cargar la información');
-      state.data = await res.json();
-      applySettings(); renderServices(); renderProfessionals(); renderProducts(); renderRatingPicker();
+      state.data = await jsonFetch('/api/data', { headers: { Accept: 'application/json' } });
+      applySettings(); renderServices(); applyServiceQuery(); renderProfessionals(); renderProducts(); restoreTracking();
     } catch (err) {
       $('#servicesGrid').innerHTML = `<div class="empty">${esc(err.message)}. Si acabás de subir el sitio, verificá que Netlify Functions estén desplegadas.</div>`;
       $('#professionalsGrid').innerHTML = '<div class="empty">No se pudieron cargar los profesionales.</div>';
@@ -42,14 +44,15 @@
     else $('#heroTitle').innerHTML = `${esc(title)} <span class="highlight">${esc(hi)}</span>`;
     $('#heroSubtitle').textContent = s.heroSubtitle || '';
     $('#serviceSearch').placeholder = s.searchPlaceholder || '¿Qué servicio necesitás hoy?';
-    $('#servicesTitle').textContent = s.servicesTitle || 'Servicios';
-    $('#servicesSubtitle').textContent = s.servicesSubtitle || '';
+    $('#servicesTitle').textContent = s.servicesTitle || 'Servicios disponibles';
+    $('#servicesSubtitle').textContent = s.servicesSubtitle || 'Elegí el servicio que necesitás para ver profesionales disponibles.';
+    $('#welcomeTitle').textContent = s.welcomeTitle || 'Bienvenido a Salta Soluciones';
+    $('#welcomeText').textContent = s.welcomeText || 'Encontrá profesionales y servicios de confianza en un solo lugar. Elegí al profesional que mejor se adapte a vos y contactalo directamente. Si necesitás orientación, también podés hablar con Salta Soluciones.';
     const generalWa = s.whatsapp || '543872521955';
-    $('#headerWhatsApp').href = waLink(generalWa, 'Hola Salta Soluciones, quisiera hacer una consulta.');
-    $('#footerWhatsApp').href = waLink(generalWa, 'Hola Salta Soluciones, quisiera hacer una consulta.');
+    const message = 'Hola Salta Soluciones, quisiera hacer una consulta.';
+    ['#headerWhatsApp','#welcomeWhatsApp','#footerWhatsApp'].forEach(id => { const el=$(id); if(el) el.href=waLink(generalWa,message); });
     $('#profesionales').classList.toggle('hidden', s.showProfessionals === false);
     $('#productos').classList.toggle('hidden', s.showProducts === false);
-    $('#calificar').classList.toggle('hidden', s.showRatings === false);
   }
 
   function renderServices(filter='') {
@@ -57,20 +60,40 @@
     const q = filter.trim().toLowerCase();
     const filtered = services.filter(s => !q || `${s.name} ${s.description}`.toLowerCase().includes(q));
     $('#servicesCount').textContent = `${filtered.length} servicio${filtered.length===1?'':'s'}`;
-    $('#servicesGrid').innerHTML = filtered.length ? filtered.map(s => `<button type="button" class="service-card" data-id="${esc(s.id)}"><div class="service-media">${s.imageUrl?`<img src="${esc(s.imageUrl)}" alt="${esc(s.name)}">`:esc(s.icon||'🔧')}</div><div class="service-name">${esc(s.name)}</div><div class="service-desc">${esc(s.description)}</div></button>`).join('') : '<div class="empty">No encontramos servicios con esa búsqueda.</div>';
-    const sel = $('#bookingService');
-    sel.innerHTML = '<option value="">Seleccioná un servicio</option>' + services.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
-    $('#servicesGrid').querySelectorAll('.service-card').forEach(card => card.addEventListener('click', () => { sel.value = card.dataset.id; document.querySelector('.booking-layout').scrollIntoView({behavior:'smooth',block:'start'}); }));
+    $('#servicesGrid').innerHTML = filtered.length ? filtered.map(s => `<button type="button" class="service-card ${state.selectedServiceId===s.id?'selected-service':''}" data-id="${esc(s.id)}"><div class="service-media">${s.imageUrl?`<img src="${esc(s.imageUrl)}" alt="${esc(s.name)}">`:esc(s.icon||'🔧')}</div><div class="service-name">${esc(s.name)}</div><div class="service-desc">${esc(s.description)}</div><div class="service-cta">Ver profesionales →</div></button>`).join('') : '<div class="empty">No encontramos servicios con esa búsqueda.</div>';
+    $('#servicesGrid').querySelectorAll('.service-card').forEach(card => card.addEventListener('click', () => {
+      state.selectedServiceId = card.dataset.id;
+      renderServices($('#serviceSearch').value);
+      renderProfessionals();
+      $('#profesionales').scrollIntoView({behavior:'smooth',block:'start'});
+    }));
   }
 
   function serviceNames(ids=[]) { return ids.map(id => state.data.services.find(s=>s.id===id)?.name).filter(Boolean).join(' · '); }
-  function renderProfessionals() {
-    const list = state.data.professionals || [], summary = state.data.ratingsSummary || {};
-    $('#professionalsGrid').innerHTML = list.length ? list.map(p => { const r=summary[p.id]; const rating=r?.count?`⭐ ${r.average.toFixed(1).replace('.',',')} <span>· ${r.count} opinión${r.count===1?'':'es'}</span>`:'<span>Sin calificaciones publicadas</span>'; return `<article class="pro-card"><div class="pro-top"><div class="avatar">${p.photoUrl?`<img src="${esc(p.photoUrl)}" alt="${esc(p.name)}">`:'👨‍🔧'}</div><div><div class="pro-name">${esc(p.name)}</div><div class="pro-service">${esc(serviceNames(p.serviceIds))}</div></div></div><div class="meta">${Number(p.yearsExperience)||0} años de experiencia<br>${esc(p.zone||'Zona a coordinar')} · ${esc(p.availability||'Consultar disponibilidad')}</div><div class="rating-line">${rating}</div><button type="button" class="outline-btn neon-touch" data-pro="${esc(p.id)}">Solicitar atención</button></article>`; }).join('') : '<div class="empty">Todavía no hay profesionales publicados. Podés agregarlos desde el panel ADMIN.</div>';
-    const ratingSel = $('#ratingProfessional');
-    ratingSel.innerHTML = '<option value="">Seleccioná un profesional</option>' + list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-    $('#professionalsGrid').querySelectorAll('[data-pro]').forEach(btn=>btn.addEventListener('click',()=>{ const p=list.find(x=>x.id===btn.dataset.pro); const sid=p?.serviceIds?.find(id=>state.data.services.some(s=>s.id===id)); if(sid) $('#bookingService').value=sid; document.querySelector('.booking-layout').scrollIntoView({behavior:'smooth'}); }));
+  function applyServiceQuery(){
+    const params=new URLSearchParams(location.search);
+    const serviceId=params.get('servicio');
+    if(!serviceId || !state.data?.services?.some(s=>s.id===serviceId)) return;
+    state.selectedServiceId=serviceId;
+    renderServices($('#serviceSearch').value);
+    setTimeout(()=>document.querySelector('#profesionales')?.scrollIntoView({behavior:'smooth',block:'start'}),120);
   }
+
+  function renderProfessionals() {
+    const all = state.data.professionals || [], summary = state.data.ratingsSummary || {};
+    const list = state.selectedServiceId ? all.filter(p => (p.serviceIds||[]).includes(state.selectedServiceId)) : all;
+    const service = state.data.services.find(s=>s.id===state.selectedServiceId);
+    $('#professionalsSubtitle').textContent = service ? `Profesionales disponibles para ${service.name}. Elegí uno y contactalo directamente por WhatsApp.` : 'Elegí un profesional y contactalo directamente por WhatsApp. El contacto queda registrado para seguimiento y calificación.';
+    $('#clearProfessionalFilter').classList.toggle('hidden', !state.selectedServiceId);
+    $('#professionalsGrid').innerHTML = list.length ? list.map(p => {
+      const r=summary[p.id];
+      const rating=r?.count?`⭐ ${r.average.toFixed(1).replace('.',',')} <span>· ${r.count} opinión${r.count===1?'':'es'}</span>`:'<span>Sin calificaciones publicadas</span>';
+      return `<article class="pro-card"><div class="pro-top"><div class="avatar">${p.photoUrl?`<img src="${esc(p.photoUrl)}" alt="${esc(p.name)}">`:'👨‍🔧'}</div><div><div class="pro-name">${esc(p.name)}</div><div class="pro-service">${esc(serviceNames(p.serviceIds))}</div></div></div><div class="meta">${Number(p.yearsExperience)||0} años de experiencia<br>${esc(p.zone||'Zona a coordinar')} · ${esc(p.availability||'Consultar disponibilidad')}</div><div class="rating-line">${rating}</div><button type="button" class="primary-btn pro-contact-btn neon-touch" data-pro-contact="${esc(p.id)}">💬 Contactar por WhatsApp</button><small class="contact-register-note">El contacto se registra para permitir seguimiento y calificación.</small></article>`;
+    }).join('') : '<div class="empty">No hay profesionales publicados para este servicio. Podés consultar directamente con Salta Soluciones por WhatsApp.</div>';
+    $('#professionalsGrid').querySelectorAll('[data-pro-contact]').forEach(btn=>btn.addEventListener('click',()=>openContactModal(btn.dataset.proContact)));
+  }
+
+  $('#clearProfessionalFilter').addEventListener('click',()=>{state.selectedServiceId='';renderServices($('#serviceSearch').value);renderProfessionals();});
 
   function renderProducts() {
     const list = state.data.products || [];
@@ -89,88 +112,89 @@
     $('#productModal').classList.remove('hidden'); document.body.style.overflow='hidden';
   }
   function closeProduct(){ $('#productModal').classList.add('hidden'); document.body.style.overflow=''; }
-  $('#closeModal').addEventListener('click',closeProduct); $('#productModal').addEventListener('click',e=>{if(e.target===$('#productModal'))closeProduct()}); document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProduct()});
+  $('#closeModal').addEventListener('click',closeProduct); $('#productModal').addEventListener('click',e=>{if(e.target===$('#productModal'))closeProduct()});
+
+  function openContactModal(id) {
+    const p = state.data.professionals.find(x=>x.id===id); if(!p) return;
+    $('#contactProfessionalId').value=id;
+    $('#contactModalTitle').textContent=`Contactar a ${p.name}`;
+    $('#contactProfessionalInfo').textContent=`${serviceNames(p.serviceIds)} · ${p.zone||'Zona a coordinar'}`;
+    const services=(state.data.services||[]).filter(s=>(p.serviceIds||[]).includes(s.id));
+    $('#contactService').innerHTML='<option value="">Seleccioná un servicio</option>'+services.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+    if(state.selectedServiceId && services.some(s=>s.id===state.selectedServiceId)) $('#contactService').value=state.selectedServiceId;
+    const saved=JSON.parse(localStorage.getItem('saltaClient')||'{}');
+    $('#contactFirstName').value=saved.firstName||''; $('#contactLastName').value=saved.lastName||''; $('#contactWhatsApp').value=saved.whatsapp||'';
+    $('#contactAddress').value=''; $('#contactDescription').value=''; $('#contactConsent').checked=false; $('#contactStatus').textContent='';
+    state.lat=null; state.lng=null; $('#contactGpsStatus').textContent='Opcional';
+    $('#contactModal').classList.remove('hidden'); document.body.style.overflow='hidden';
+  }
+  function closeContact(){ $('#contactModal').classList.add('hidden'); document.body.style.overflow=''; }
+  $('#closeContactModal').addEventListener('click',closeContact); $('#contactModal').addEventListener('click',e=>{if(e.target===$('#contactModal'))closeContact()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeProduct();closeContact();}});
+
+  $('#contactGpsBtn').addEventListener('click',()=>{
+    if(!navigator.geolocation){$('#contactGpsStatus').textContent='Tu navegador no admite GPS.';return;}
+    $('#contactGpsStatus').textContent='Solicitando permiso…';
+    navigator.geolocation.getCurrentPosition(pos=>{state.lat=pos.coords.latitude;state.lng=pos.coords.longitude;$('#contactGpsStatus').textContent='✓ Ubicación agregada';},err=>{$('#contactGpsStatus').textContent=err.code===1?'No autorizaste la ubicación. Podés continuar.':'No se pudo obtener la ubicación.';},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+  });
+
+  $('#directContactForm').addEventListener('submit',async e=>{
+    e.preventDefault(); const form=e.currentTarget; if(!form.reportValidity())return;
+    const btn=form.querySelector('button[type=submit]'); btn.disabled=true; $('#contactStatus').textContent='Registrando contacto…';
+    const popup=window.open('about:blank','_blank');
+    try{
+      const payload={professionalId:$('#contactProfessionalId').value,serviceId:$('#contactService').value,firstName:$('#contactFirstName').value,lastName:$('#contactLastName').value,whatsapp:$('#contactWhatsApp').value,address:$('#contactAddress').value,description:$('#contactDescription').value,lat:state.lat,lng:state.lng,consentContact:$('#contactConsent').checked};
+      const out=await jsonFetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      localStorage.setItem('saltaClient',JSON.stringify({firstName:payload.firstName,lastName:payload.lastName,whatsapp:payload.whatsapp}));
+      localStorage.setItem('saltaTracking',JSON.stringify({code:out.code,whatsapp:payload.whatsapp}));
+      $('#trackingCode').value=out.code; $('#trackingWhatsApp').value=payload.whatsapp;
+      $('#contactStatus').innerHTML=`✅ Contacto registrado. Tu código es <strong>${esc(out.code)}</strong>.<br><small>Guardalo para confirmar después si el profesional asistió y calificar el trabajo.</small>`;
+      if(popup) popup.location.href=out.whatsappUrl; else $('#contactStatus').innerHTML += `<br><a class="wa-btn inline-wa" target="_blank" rel="noreferrer" href="${esc(out.whatsappUrl)}">Abrir WhatsApp</a>`;
+      setTimeout(()=>{ if(!$('#contactModal').classList.contains('hidden')) $('#contactStatus').insertAdjacentHTML('beforeend','<br><button type="button" class="outline-btn compact" id="goTracking">Ir a Mi solicitud</button>'); const g=$('#goTracking'); if(g)g.onclick=()=>{closeContact();$('#mi-solicitud').scrollIntoView({behavior:'smooth'});}; },100);
+    }catch(err){ if(popup)popup.close(); $('#contactStatus').textContent='Error: '+err.message; }
+    finally{btn.disabled=false;}
+  });
 
   $('#searchForm').addEventListener('submit',e=>{e.preventDefault();renderServices($('#serviceSearch').value);$('#servicios').scrollIntoView({behavior:'smooth'});});
   $('#serviceSearch').addEventListener('input',()=>renderServices($('#serviceSearch').value));
 
-  $('#gpsBtn').addEventListener('click',()=>{
-    if(!navigator.geolocation){$('#gpsStatus').textContent='Tu navegador no admite GPS.';return;}
-    $('#gpsStatus').textContent='Solicitando permiso…';
-    navigator.geolocation.getCurrentPosition(pos=>{state.lat=pos.coords.latitude;state.lng=pos.coords.longitude;$('#gpsStatus').textContent='✓ Ubicación agregada';},err=>{$('#gpsStatus').textContent=err.code===1?'No autorizaste la ubicación. Podés continuar con la dirección.':'No se pudo obtener la ubicación.';},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
-  });
+  function restoreTracking(){
+    try{const saved=JSON.parse(localStorage.getItem('saltaTracking')||'{}');if(saved.code)$('#trackingCode').value=saved.code;if(saved.whatsapp)$('#trackingWhatsApp').value=saved.whatsapp;}catch{}
+    const qs=new URLSearchParams(location.search); const code=qs.get('codigo'); if(code)$('#trackingCode').value=code;
+  }
 
-  $('#bookingForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const form = e.currentTarget;
-    if(!form.reportValidity()) return;
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    $('#bookingStatus').textContent = 'Enviando solicitud…';
-    try {
-      const res = await fetch('/api/request',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          firstName:$('#firstName').value,
-          lastName:$('#lastName').value,
-          whatsapp:$('#clientWhatsApp').value,
-          address:$('#address').value,
-          description:$('#description').value,
-          serviceId:$('#bookingService').value,
-          lat:state.lat,
-          lng:state.lng,
-          consentContact:$('#consentContact').checked
-        })
-      });
-      const out = await res.json();
-      if(!res.ok) throw new Error(out.error||'No se pudo enviar');
+  $('#trackingForm').addEventListener('submit',async e=>{e.preventDefault();await lookupTracking();});
+  async function lookupTracking(message=''){
+    const code=$('#trackingCode').value.trim(), whatsapp=$('#trackingWhatsApp').value.trim(); if(!code||!whatsapp)return;
+    $('#trackingStatus').textContent='Consultando…';
+    try{const out=await jsonFetch('/api/client-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'lookup',code,whatsapp})}); state.tracking=out.request; localStorage.setItem('saltaTracking',JSON.stringify({code,whatsapp})); $('#trackingStatus').textContent=message; renderTracking();}
+    catch(err){state.tracking=null;$('#trackingResult').innerHTML='<div class="empty">No se pudo mostrar la solicitud.</div>';$('#trackingStatus').textContent='Error: '+err.message;}
+  }
 
-      form.reset();
-      state.lat = null;
-      state.lng = null;
-      $('#gpsStatus').textContent = 'Opcional';
-      $('#bookingStatus').innerHTML = `✅ Solicitud recibida. Código: <strong>${esc(out.code)}</strong>`;
-    } catch(err) {
-      $('#bookingStatus').textContent = `Error: ${err.message}`;
-    } finally {
-      btn.disabled = false;
-    }
-  });
+  async function trackingAction(action,value){
+    const code=$('#trackingCode').value.trim(), whatsapp=$('#trackingWhatsApp').value.trim();
+    try{const out=await jsonFetch('/api/client-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,code,whatsapp,value})});state.tracking=out.request;renderTracking();}
+    catch(err){alert(err.message);}
+  }
 
-  function renderRatingPicker(){const wrap=$('#starsPicker');wrap.innerHTML='';for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.className='star-btn';b.textContent='★';b.setAttribute('aria-label',`${i} estrellas`);b.addEventListener('click',()=>{state.selectedStars=i;[...wrap.children].forEach((x,j)=>x.classList.toggle('active',j<i));$('#ratingCommentWrap').classList.toggle('hidden',i===5);if(i===5)$('#ratingComment').value='';});wrap.appendChild(b)}}
-  $('#ratingForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const form = e.currentTarget;
-    if(!form.reportValidity()) return;
-    if(!state.selectedStars){$('#ratingStatus').textContent='Elegí de 1 a 5 estrellas.';return;}
-    if(state.selectedStars<5&&!$('#ratingComment').value.trim()){ $('#ratingStatus').textContent='Explicá el motivo de la calificación.';return;}
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    try{
-      const res=await fetch('/api/rating',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          professionalId:$('#ratingProfessional').value,
-          stars:state.selectedStars,
-          comment:$('#ratingComment').value,
-          requestCode:$('#requestCode').value
-        })
-      });
-      const out=await res.json();
-      if(!res.ok)throw new Error(out.error||'No se pudo enviar');
+  function yesNo(value){return value===true?'✅ Sí':value===false?'❌ No':'⏳ Pendiente';}
+  function renderTracking(){
+    const r=state.tracking; if(!r)return;
+    const ratingText=r.clientRatingSubmitted?`⭐ ${r.clientStars}/5`:'Pendiente';
+    $('#trackingResult').innerHTML=`<div class="track-head"><div><div class="eyebrow welcome-eyebrow">${esc(r.code)}</div><h3>${esc(r.serviceName)}</h3><p>${esc(r.professionalName||'Profesional')}</p></div><span class="track-status">${esc(r.status||'Contacto iniciado')}</span></div>
+      <div class="track-steps"><div class="track-step done"><span>1</span><div><strong>Contacto iniciado</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleString('es-AR'):''}</small></div></div><div class="track-step ${r.clientVisit===true?'done':r.clientVisit===false?'bad':''}"><span>2</span><div><strong>¿El profesional asistió?</strong><small>${yesNo(r.clientVisit)}</small></div></div><div class="track-step ${r.clientWork===true?'done':r.clientWork===false?'bad':''}"><span>3</span><div><strong>¿El trabajo se realizó?</strong><small>${yesNo(r.clientWork)}</small></div></div><div class="track-step ${r.clientRatingSubmitted?'done':''}"><span>4</span><div><strong>Calificación</strong><small>${ratingText}</small></div></div></div>
+      <div class="track-actions">${r.clientVisit==null?`<p><strong>¿El profesional asistió o te atendió?</strong></p><div class="answer-buttons"><button class="primary-btn" data-visit="true" type="button">✅ Sí, asistió</button><button class="outline-btn danger-outline" data-visit="false" type="button">❌ No asistió</button></div>`:''}${r.clientVisit===true&&r.clientWork==null?`<p><strong>¿El trabajo quedó realizado?</strong></p><div class="answer-buttons"><button class="primary-btn" data-work="true" type="button">✅ Sí, finalizado</button><button class="outline-btn danger-outline" data-work="false" type="button">❌ No se realizó</button></div>`:''}${r.clientVisit===false?'<div class="tracking-note">Registramos que el profesional no asistió. Esta información queda visible para Salta Soluciones.</div>':''}${r.clientWork===false?'<div class="tracking-note">Registramos que el trabajo no se concretó.</div>':''}${r.clientWork===true&&!r.clientRatingSubmitted?ratingBox():''}${r.clientRatingSubmitted?'<div class="tracking-note success-note">✅ Gracias. Tu calificación quedó enviada y será revisada antes de publicarse.</div>':''}</div>`;
+    $('#trackingResult').querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>trackingAction('confirmVisit',b.dataset.visit==='true'));
+    $('#trackingResult').querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>trackingAction('confirmWork',b.dataset.work==='true'));
+    initTrackingStars();
+  }
 
-      form.reset();
-      state.selectedStars=0;
-      renderRatingPicker();
-      $('#ratingCommentWrap').classList.add('hidden');
-      $('#ratingStatus').textContent='✅ '+out.message;
-    }catch(err){
-      $('#ratingStatus').textContent='Error: '+err.message;
-    }finally{
-      btn.disabled=false;
-    }
-  });
+  function ratingBox(){return `<div class="tracking-rating"><p><strong>¿Cómo calificás al profesional?</strong></p><div id="trackingStars" class="stars-picker"></div><textarea id="trackingComment" placeholder="Comentario (obligatorio si elegís 1, 2 o 3 estrellas)"></textarea><button id="sendTrackingRating" class="primary-btn" type="button">Enviar calificación</button><div id="trackingRatingStatus" class="status-msg"></div></div>`;}
+  function initTrackingStars(){
+    const wrap=$('#trackingStars'); if(!wrap)return; state.trackingStars=0; wrap.innerHTML='';
+    for(let i=1;i<=5;i++){const b=document.createElement('button');b.type='button';b.className='star-btn';b.textContent='★';b.setAttribute('aria-label',`${i} estrellas`);b.onclick=()=>{state.trackingStars=i;[...wrap.children].forEach((x,j)=>x.classList.toggle('active',j<i));};wrap.appendChild(b);}
+    $('#sendTrackingRating').onclick=async()=>{const comment=$('#trackingComment').value.trim();if(!state.trackingStars){$('#trackingRatingStatus').textContent='Elegí de 1 a 5 estrellas.';return;}if(state.trackingStars<=3&&!comment){$('#trackingRatingStatus').textContent='Explicá brevemente el motivo.';return;}const code=$('#trackingCode').value.trim(),whatsapp=$('#trackingWhatsApp').value.trim();try{const out=await jsonFetch('/api/client-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'rate',code,whatsapp,stars:state.trackingStars,comment})});state.tracking=out.request;renderTracking();}catch(err){$('#trackingRatingStatus').textContent='Error: '+err.message;}};
+  }
+
   load();
 })();

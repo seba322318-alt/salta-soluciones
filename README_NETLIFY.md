@@ -1,83 +1,70 @@
-# Salta Soluciones — paquete listo para Netlify
+# Salta Soluciones — V2 contacto directo cliente-profesional
 
-Este proyecto incluye:
+Esta versión mantiene la estructura para Netlify (Functions + Edge Functions + Netlify Blobs) y cambia el flujo operativo:
 
-- Web pública responsive para PC y celular.
-- Logo de Salta Soluciones integrado.
-- Colores azul marino, azul eléctrico, celeste neón y detalles naranjas.
-- Efecto luminoso al pasar el puntero en PC y al tocar en celular.
-- Buscador de servicios.
-- Servicios editables desde ADMIN.
-- Profesionales editables desde ADMIN con exactamente estos campos: foto, nombre y apellido, servicios, años de experiencia, WhatsApp, zona, disponibilidad, observaciones privadas y estado.
-- Formulario de reserva con nombre, apellido, dirección, WhatsApp y GPS opcional.
-- Productos con precio público y hasta 5 fotos.
-- Calificación de 1 a 5 estrellas; si es menor a 5, el comentario es obligatorio.
-- Moderación de calificaciones desde ADMIN antes de mostrarlas públicamente.
-- ADMIN protegido con contraseña y cookie de sesión segura.
-- Datos persistentes en Netlify Blobs: los cambios del ADMIN se reflejan en la web sin volver a subir archivos.
-- `robots.txt`, `sitemap.xml`, metadatos básicos y estructura responsive.
+- El cliente elige un servicio y luego un profesional.
+- El botón **Contactar por WhatsApp** registra primero el contacto en Salta Soluciones y después abre WhatsApp directo con el profesional.
+- El ADMIN ya no tiene que asignar manualmente cada trabajo.
+- El cliente puede entrar a **Mi solicitud** con su código + WhatsApp.
+- Desde Mi solicitud confirma si el profesional asistió, si el trabajo se realizó y puede calificar de 1 a 5 estrellas.
+- La calificación queda pendiente de moderación en ADMIN antes de publicarse.
+- El ADMIN ve contactos, visitas, trabajos confirmados y calificaciones por profesional.
+- En cada profesional se puede registrar una mensualidad fija, próximo vencimiento y estado de pago.
+- La página principal incluye una bienvenida separada de los servicios y un botón de WhatsApp general de Salta Soluciones.
+- Los datos privados del profesional (WhatsApp, notas privadas y mensualidad) ya no se entregan en el API público; el número de WhatsApp se devuelve solamente después de registrar el contacto.
 
-## IMPORTANTE: forma de subirlo
+## Archivos nuevos
 
-Como esta versión usa Netlify Functions, Edge Functions y Netlify Blobs, **no conviene usar solamente Netlify Drop/arrastrar una carpeta estática**. Publicalo conectando el proyecto a Git (GitHub/GitLab/Bitbucket) o con Netlify CLI.
+- `netlify/functions/direct-contact.mjs` → `/api/contact`
+- `netlify/functions/client-status.mjs` → `/api/client-status`
 
-### Opción recomendada — Git
+## Publicación
 
-1. Descomprimí este ZIP.
-2. Subí la carpeta completa a un repositorio Git.
-3. En Netlify: **Add new project → Import an existing project**.
-4. Elegí el repositorio.
-5. Netlify detectará `netlify.toml`.
-6. Antes de publicar, agregá las variables de entorno indicadas abajo.
-7. Deploy.
+Este proyecto usa Netlify Functions, Edge Functions y Netlify Blobs. Publicalo desde el repositorio Git conectado a Netlify, igual que la versión anterior.
 
-No hay comando de build. El directorio de publicación ya está configurado como `public`.
+1. Reemplazá en GitHub los archivos del proyecto por los de esta carpeta.
+2. Hacé **Commit changes**.
+3. Netlify hará el deploy automáticamente.
+4. No cambies las variables de entorno existentes (`ADMIN_PASSWORD` y `SESSION_SECRET`).
 
-### Variables de entorno obligatorias
+Los datos guardados en Netlify Blobs no están dentro del ZIP y no deberían borrarse por actualizar el código.
 
-En Netlify, entrá a **Project configuration → Environment variables** y agregá:
+## Preparado para dominio y Google
 
-- `ADMIN_PASSWORD` = la contraseña privada que vos elijas para entrar al panel.
-- `SESSION_SECRET` = una cadena aleatoria larga, idealmente de 32 caracteres o más.
+Esta versión queda preparada para conectar un dominio propio sin reescribir las URLs SEO.
 
-Ejemplo de `SESSION_SECRET` (NO uses este ejemplo en producción):
+Cuando compres el dominio:
 
-`cambia-esto-por-un-secreto-largo-y-unico-123456`
+1. Configuralo como dominio principal del proyecto en Netlify.
+2. Agregá la variable de entorno `PUBLIC_SITE_URL` con la URL final, por ejemplo `https://www.tudominio.com.ar`.
+3. Hacé un nuevo deploy.
+4. Verificá en el navegador:
+   - `/robots.txt`
+   - `/sitemap.xml`
+   - `/servicios/electricista-salta`
+5. En Google Search Console, agregá la propiedad del dominio, completá la verificación DNS y enviá `https://TU-DOMINIO/sitemap.xml`.
 
-Después de agregar o cambiar variables, hacé un deploy nuevo.
+### SEO incluido
 
-## Accesos
+- canonical dinámico en la portada;
+- sitemap dinámico con cada servicio activo;
+- robots.txt dinámico;
+- páginas individuales indexables por servicio (`/servicios/<slug>-salta`);
+- datos estructurados `Organization`, `WebSite`, `WebPage`, `BreadcrumbList` e `ItemList`;
+- Open Graph básico;
+- contenido visible de “Cómo funciona” y preguntas frecuentes;
+- ADMIN, acceso, seguimiento privado y portal profesional marcados como `noindex`.
 
-- Web pública: `/`
-- Acceso al administrador: `/acceso.html`
-- Panel privado: `/admin/`
+### Perfil de Empresa / Google Maps
 
-No existe ningún enlace público al ADMIN dentro de la web.
+No se configura automáticamente desde el código. Además, si Salta Soluciones funciona únicamente como plataforma/directorio que genera contactos entre clientes y profesionales, hay que revisar la elegibilidad antes de crear un Perfil de Empresa de Google. Los perfiles individuales de profesionales pueden ser una mejor opción cuando cada profesional cumple los requisitos de Google.
 
-## WhatsApp
+## Enlaces privados sin contraseña
 
-El número no se muestra en los botones públicos. Los botones dicen solamente **WhatsApp** y redirigen al número configurado.
+Esta versión incorpora dos accesos privados:
 
-Número inicial configurado: `543872521955` (Argentina +54 + 3872521955).
+- **Profesional:** cada profesional tiene un enlace permanente generado desde ADMIN. Desde su portal puede marcar “Tomé el trabajo”, “No se concretó” o “Trabajo finalizado”. En ADMIN se puede copiar, enviar por WhatsApp o regenerar el enlace.
+- **Cliente:** cada contacto genera un enlace de evaluación único por solicitud. Desde ADMIN se puede enviarlo por WhatsApp o copiarlo. El cliente confirma asistencia, trabajo realizado y califica de 1 a 5 estrellas sin usuario ni contraseña.
 
-Podés cambiarlo desde **ADMIN → Página principal** y también por servicio/producto.
+Las páginas `/profesional.html` y `/evaluar.html` están marcadas como `noindex,nofollow` y no forman parte del SEO público.
 
-## Datos y almacenamiento
-
-La plataforma usa Netlify Blobs para guardar:
-
-- configuración visual;
-- servicios;
-- profesionales;
-- productos;
-- solicitudes;
-- calificaciones;
-- imágenes cargadas desde ADMIN.
-
-## SEO
-
-La base incluye título, descripción, Open Graph, robots y sitemap. Cuando tengas el dominio definitivo, conviene actualizar la URL canónica, Search Console y el sitemap para páginas específicas de cada servicio.
-
-## Nota sobre privacidad
-
-El formulario puede guardar dirección, WhatsApp y coordenadas GPS si el usuario autoriza la geolocalización. Antes de publicar comercialmente, agregá una política de privacidad y condiciones de uso adaptadas a tu actividad.
