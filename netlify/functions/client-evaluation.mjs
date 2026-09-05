@@ -28,7 +28,8 @@ function publicRequest(row, state) {
     code: row.code,
     createdAt: row.createdAt,
     serviceName: row.serviceName,
-    professionalName: row.professionalName || professional?.name || "Profesional",
+    professionalName: row.professionalName || professional?.name || "Pendiente de asignación",
+    hasProfessional: Boolean(row.professionalId),
     status: row.status || "Contacto iniciado",
     clientVisit: row.clientVisit ?? null,
     clientWork: row.clientWork ?? null,
@@ -50,6 +51,7 @@ export default async (req) => {
   if (!row) return Response.json({ error: "El enlace de evaluación no es válido o fue reemplazado" }, { status: 404 });
   const state = await getState();
   const action = body.action || "lookup";
+  if (!row.professionalId) return Response.json({ error: "Todavía no hay un profesional asignado a esta solicitud" }, { status: 400 });
   const now = new Date().toISOString();
 
   if (action === "confirmVisit") {

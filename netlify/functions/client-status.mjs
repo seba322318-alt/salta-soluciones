@@ -28,7 +28,8 @@ function publicRequest(row, state) {
   const professional = state.professionals.find(p=>p.id===row.professionalId);
   return {
     code: row.code, createdAt: row.createdAt, serviceName: row.serviceName,
-    professionalName: row.professionalName || professional?.name || "Profesional",
+    professionalName: row.professionalName || professional?.name || "Pendiente de asignación",
+    hasProfessional: Boolean(row.professionalId),
     status: row.status || "Contacto iniciado", clientVisit: row.clientVisit ?? null,
     clientWork: row.clientWork ?? null, clientRatingSubmitted: row.clientRatingSubmitted === true,
     clientStars: Number(row.clientStars) || null
@@ -39,13 +40,16 @@ export default async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
   const body = await req.json().catch(() => null);
   if (!body) return Response.json({ error: "Datos inválidos" }, { status: 400 });
-  const code = text(body.code, 80).toUpperCase();
+  const rawCode = text(body.code, 80);
+  const code = rawCode.replace(/[^0-9]/g, "");
   const whatsapp = text(body.whatsapp, 50);
-  if (!code || !whatsapp) return Response.json({ error: "Ingresá código y WhatsApp" }, { status: 400 });
+  if (!/^\d{5}$/.test(code)) return Response.json({ error: "El número de solicitud debe tener 5 dígitos" }, { status: 400 });
+  if (!whatsapp) return Response.json({ error: "Ingresá tu WhatsApp" }, { status: 400 });
   const { row, requestStore } = await findRequest(code);
   if (!row || !phonesMatch(whatsapp, row.clientWhatsappDigits || row.whatsapp)) return Response.json({ error: "No encontramos una solicitud con esos datos" }, { status: 404 });
   const state = await getState();
   const action = body.action || "lookup";
+  if (action !== "lookup" && !row.professionalId) return Response.json({ error: "Todavía no hay un profesional asignado a esta solicitud" }, { status: 400 });
 
   if (action === "confirmVisit") {
     const value = body.value === true;

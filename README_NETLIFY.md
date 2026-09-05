@@ -64,7 +64,40 @@ No se configura automáticamente desde el código. Además, si Salta Soluciones 
 Esta versión incorpora dos accesos privados:
 
 - **Profesional:** cada profesional tiene un enlace permanente generado desde ADMIN. Desde su portal puede marcar “Tomé el trabajo”, “No se concretó” o “Trabajo finalizado”. En ADMIN se puede copiar, enviar por WhatsApp o regenerar el enlace.
-- **Cliente:** cada contacto genera un enlace de evaluación único por solicitud. Desde ADMIN se puede enviarlo por WhatsApp o copiarlo. El cliente confirma asistencia, trabajo realizado y califica de 1 a 5 estrellas sin usuario ni contraseña.
+- **Cliente:** cada solicitud nueva recibe un número de 5 dígitos. El cliente entra a **Mi solicitud** con esos 5 números + su WhatsApp y desde ahí confirma asistencia, trabajo realizado y califica de 1 a 5 estrellas sin usuario ni contraseña.
 
-Las páginas `/profesional.html` y `/evaluar.html` están marcadas como `noindex,nofollow` y no forman parte del SEO público.
+El portal `/profesional.html` y la página heredada `/evaluar.html` están marcados como `noindex,nofollow` y no forman parte del SEO público. La experiencia principal del cliente usa **Mi solicitud** con número de 5 dígitos + WhatsApp.
 
+
+## Actualización V3 — solicitudes, GPS y evaluación visible
+
+Esta versión agrega:
+- WhatsApp del cliente visible y accionable desde ADMIN.
+- Botón ADMIN “WhatsApp para calificar” con enlace privado único de evaluación.
+- Estado del profesional visible: pendiente, aceptó, rechazó o indicó finalizado.
+- Estado del cliente visible: visita, trabajo y calificación de 1 a 5 estrellas.
+- Contacto directo con profesional con dirección, descripción y GPS antes de abrir WhatsApp.
+- Si un servicio no tiene profesionales activos, aparece un formulario para nombre, apellido, WhatsApp, dirección, descripción y GPS.
+- La solicitud sin profesional llega al ADMIN con estado “Pendiente de profesional”.
+- Desde ADMIN se puede asignar un profesional compatible con el servicio.
+- Después de asignar, ADMIN puede avisar al profesional por WhatsApp con los datos del cliente y su portal privado.
+
+El profesional no califica al cliente: confirma si tomó, rechazó o finalizó el trabajo. La calificación de estrellas la realiza el cliente.
+
+
+## Flujo de solicitud simplificado (versión 5 dígitos)
+
+- Cada solicitud nueva recibe un número simple de **5 dígitos** (por ejemplo `48317`).
+- El cliente consulta en **Mi solicitud** usando esos 5 números + el mismo WhatsApp registrado.
+- Desde esa pantalla puede confirmar visita, confirmar trabajo y calificar de 1 a 5 estrellas.
+- En ADMIN aparece el WhatsApp del cliente y el botón **WhatsApp para calificar**, que abre el chat con el número de solicitud y el enlace a Mi solicitud.
+- El profesional mantiene su enlace privado permanente, sin usuario ni contraseña.
+- Si un servicio no tiene profesionales disponibles, el sitio muestra el formulario con nombre, apellido, WhatsApp, dirección, descripción y GPS para dejar la solicitud pendiente de asignación.
+
+
+## Versión V5 — limpieza y eliminación de solicitudes
+
+- Al abrir ADMIN por primera vez después de desplegar esta versión, se ejecuta una limpieza única solicitada de los registros de prueba en solicitudes, índices de seguimiento y calificaciones.
+- La limpieza NO borra configuración, profesionales, servicios, productos ni imágenes.
+- Cada solicitud tiene ahora un botón **Eliminar** en ADMIN. El borrado elimina también el índice del código, el acceso de evaluación y la calificación vinculada.
+- La limpieza inicial tiene un marcador persistente (`salta-maintenance`) para que no vuelva a ejecutarse en despliegues posteriores.

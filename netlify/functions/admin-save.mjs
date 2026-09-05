@@ -93,6 +93,55 @@ export default async (req) => {
     return Response.json({ ok: true, evaluationToken: row.evaluationToken });
   }
 
+  if (body.action === "assignProfessional") {
+    const id = str(body.id, 120);
+    const professionalId = str(body.professionalId, 120);
+    const state = await getState();
+    const store = getStore({ name: "salta-requests", consistency: "strong" });
+    const row = await store.get(id, { type: "json", consistency: "strong" });
+    if (!row) return Response.json({ error: "Solicitud no encontrada" }, { status: 404 });
+    const professional = (state.professionals || []).find((p) => p.id === professionalId && p.status === "Activo");
+    if (!professional) return Response.json({ error: "Profesional no disponible" }, { status: 400 });
+    if (!(professional.serviceIds || []).includes(row.serviceId)) return Response.json({ error: "Ese profesional no ofrece el servicio solicitado" }, { status: 400 });
+    const now = new Date().toISOString();
+    row.professionalId = professional.id;
+    row.professionalName = professional.name;
+    row.professionalResponse = "Pendiente";
+    row.professionalWork = false;
+    row.assignedAt = now;
+    row.status = "Profesional asignado";
+    row.updatedAt = now;
+    await store.setJSON(row.id, row);
+    return Response.json({ ok: true, request: row });
+  }
+
+
+  if (body.action === "deleteRequest") {
+    const id = str(body.id, 120);
+    const requestStore = getStore({ name: "salta-requests", consistency: "strong" });
+    const requestIndex = getStore({ name: "salta-request-index", consistency: "strong" });
+    const evaluationIndex = getStore({ name: "salta-evaluation-index", consistency: "strong" });
+    const ratingStore = getStore({ name: "salta-ratings", consistency: "strong" });
+    const row = await requestStore.get(id, { type: "json", consistency: "strong" });
+    if (!row) return Response.json({ error: "Solicitud no encontrada" }, { status: 404 });
+
+    if (row.code) await requestIndex.delete(String(row.code));
+    if (row.evaluationToken) await evaluationIndex.delete(String(row.evaluationToken));
+
+    // Las calificaciones verificadas actuales usan request-<id>. También se revisan
+    // registros anteriores para no dejar una opinión huérfana al borrar la solicitud.
+    await ratingStore.delete(`request-${id}`);
+    const listedRatings = await ratingStore.list();
+    for (const item of listedRatings.blobs || []) {
+      if (item.key === `request-${id}`) continue;
+      const rating = await ratingStore.get(item.key, { type: "json", consistency: "strong" });
+      if (rating?.requestId === id) await ratingStore.delete(item.key);
+    }
+
+    await requestStore.delete(id);
+    return Response.json({ ok: true, deletedId: id, deletedCode: row.code || "" });
+  }
+
   if (body.action === "ratingModerate") {
     const store = getStore({ name: "salta-ratings", consistency: "strong" });
     const row = await store.get(str(body.id, 100), { type: "json", consistency: "strong" });

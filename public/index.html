@@ -52,8 +52,8 @@
     <div class="tracking-layout">
       <div class="form-card tracking-card"><div class="eyebrow welcome-eyebrow">Seguimiento</div><h2>Mi solicitud</h2><p class="section-sub">Consultá si el profesional asistió, confirmá si el trabajo se realizó y calificá de 1 a 5 estrellas.</p>
         <form id="trackingForm" class="form-grid">
-          <label class="field">Código de solicitud<input id="trackingCode" required placeholder="Ej.: SS-20260905-ABCDE" autocomplete="off"></label>
-          <label class="field">Tu WhatsApp<input id="trackingWhatsApp" required inputmode="tel" autocomplete="tel"></label>
+          <label class="field">Número de solicitud <span class="field-hint">(5 dígitos)</span><input id="trackingCode" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="Ej.: 48317" autocomplete="off"></label>
+          <label class="field">Tu WhatsApp<input id="trackingWhatsApp" required inputmode="tel" autocomplete="tel"><small class="field-help">Usá el mismo número con el que hiciste la solicitud.</small></label>
           <div class="span-2"><button class="primary-btn neon-touch" type="submit">Consultar estado</button><div id="trackingStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
         </form>
       </div>
@@ -95,9 +95,9 @@
       <input id="contactProfessionalId" type="hidden">
       <label class="field">Nombre<input id="contactFirstName" required autocomplete="given-name"></label><label class="field">Apellido<input id="contactLastName" required autocomplete="family-name"></label>
       <label class="field">Tu WhatsApp<input id="contactWhatsApp" required inputmode="tel" autocomplete="tel"></label><label class="field">Servicio<select id="contactService" required><option value="">Seleccioná un servicio</option></select></label>
-      <label class="field span-2">Dirección / zona <span class="optional-label">(opcional)</span><input id="contactAddress" autocomplete="street-address" placeholder="Ej.: Zona Sur, Av. Belgrano 1234"></label>
-      <label class="field span-2">¿Qué necesitás? <span class="optional-label">(opcional)</span><textarea id="contactDescription" placeholder="Contale brevemente al profesional qué necesitás"></textarea></label>
-      <div class="span-2 gps-row"><button id="contactGpsBtn" class="gps-btn neon-touch" type="button">📍 Agregar ubicación GPS</button><span id="contactGpsStatus" class="gps-status">Opcional</span></div>
+      <label class="field span-2">Dirección / zona<input id="contactAddress" required autocomplete="street-address" placeholder="Ej.: Zona Sur, Av. Belgrano 1234"></label>
+      <label class="field span-2">Descripción del trabajo<textarea id="contactDescription" required placeholder="Contale brevemente al profesional qué necesitás"></textarea></label>
+      <div class="span-2 gps-row"><button id="contactGpsBtn" class="gps-btn neon-touch" type="button">📍 Enviar mi ubicación GPS</button><span id="contactGpsStatus" class="gps-status">Recomendado para ubicar mejor el servicio</span></div>
       <label class="span-2 check-row"><input id="contactConsent" type="checkbox" required><span>Acepto que Salta Soluciones registre este contacto para permitir el seguimiento y la calificación del servicio.</span></label>
       <div class="span-2"><button class="primary-btn neon-touch" type="submit">💬 Continuar a WhatsApp</button><div id="contactStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div>
     </form>

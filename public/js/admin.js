@@ -10,8 +10,9 @@
   const statusPill = status => {
     const green=['Activo','Trabajo realizado','Trabajo confirmado','Profesional aceptó','Profesional indicó finalizado','Aprobada','Al día','Sí'].includes(status);
     const red=['Suspendido','Cancelada','No asistió','No concretado','Profesional rechazó','Vencido','No'].includes(status);
-    const blue=['Contacto iniciado','Nueva','Visita confirmada'].includes(status);
-    return `<span class="pill ${green?'green':red?'red':blue?'blue':'orange'}">${esc(status||'Pendiente')}</span>`;
+    const blue=['Contacto iniciado','Nueva','Visita confirmada','Profesional asignado'].includes(status);
+    const pending=['Pendiente de profesional'].includes(status);
+    return `<span class="pill ${green?'green':red?'red':blue?'blue':pending?'orange':'orange'}">${esc(status||'Pendiente')}</span>`;
   };
   const saveIndicator = msg => { $('#saveIndicator').textContent=msg; setTimeout(()=>{if($('#saveIndicator').textContent===msg)$('#saveIndicator').textContent='';},3000); };
 
@@ -20,7 +21,7 @@
     if (res.status===401) { location.href='/acceso.html'; throw new Error('Sesión vencida'); }
     const out = await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.error||'Error de servidor'); return out;
   }
-  async function loadAll(){ const out=await api('/api/admin/data'); app.state=out.state; app.requests=out.requests||[]; app.ratings=out.ratings||[]; fillHome(); renderAll(); }
+  async function loadAll(){ const out=await api('/api/admin/data'); app.state=out.state; app.requests=out.requests||[]; app.ratings=out.ratings||[]; fillHome(); renderAll(); if(out.initialCleanupPerformed) setTimeout(()=>alert('✓ Se eliminaron los registros de prueba anteriores. Profesionales, servicios, productos y configuración se conservaron.'),150); }
   async function persistState(){ saveIndicator('Guardando…'); const out=await api('/api/admin/save',{method:'POST',body:JSON.stringify({action:'saveState',state:app.state})}); app.state=out.state; renderAll(); saveIndicator('✓ Guardado'); }
   async function uploadFile(file){ if(!file)return ''; const fd=new FormData(); fd.append('file',file); const out=await api('/api/admin/upload',{method:'POST',body:fd}); return out.url; }
 
@@ -80,30 +81,84 @@
 
   function renderProducts(){ $('#productsBody').innerHTML=app.state.products.length?app.state.products.map(p=>`<tr><td><div class="thumb-admin">${p.images?.[0]?`<img src="${esc(p.images[0])}" alt="">`:'📦'}</div></td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.price)}</td><td>${p.images?.length||0}/5</td><td>${statusPill(p.active!==false?'Activo':'Inactivo')}</td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${esc(p.id)}">Editar</button><button class="mini-btn red" data-delete-product="${esc(p.id)}">Eliminar</button></div></td></tr>`).join(''):'<tr><td colspan="6">No hay productos.</td></tr>'; $$('[data-edit-product]').forEach(b=>b.addEventListener('click',()=>productModal(b.dataset.editProduct))); $$('[data-delete-product]').forEach(b=>b.addEventListener('click',()=>deleteItem('product',b.dataset.deleteProduct))); }
 
-  function requestMatches(r){ if(app.requestFilter==='all')return true; if(app.requestFilter==='contact')return r.clientVisit==null; if(app.requestFilter==='visit')return r.clientVisit===true&&r.clientWork==null; if(app.requestFilter==='completed')return r.clientWork===true; if(app.requestFilter==='issues')return r.clientVisit===false||r.clientWork===false||r.professionalResponse==='Rechazó'||(r.professionalWork===true&&r.clientWork===false); return true; }
+  function requestMatches(r){
+    if(app.requestFilter==='all')return true;
+    if(app.requestFilter==='unassigned')return !r.professionalId;
+    if(app.requestFilter==='contact')return !!r.professionalId && r.clientVisit==null;
+    if(app.requestFilter==='visit')return r.clientVisit===true&&r.clientWork==null;
+    if(app.requestFilter==='completed')return r.clientWork===true||r.professionalWork===true;
+    if(app.requestFilter==='issues')return r.clientVisit===false||r.clientWork===false||r.professionalResponse==='Rechazó'||(r.professionalWork===true&&r.clientWork===false);
+    return true;
+  }
   function yn(v){return v===true?statusPill('Sí'):v===false?statusPill('No'):statusPill('Pendiente');}
-  function evaluationUrl(token){return token?`${location.origin}/evaluar.html?token=${encodeURIComponent(token)}`:'';}
-  async function ensureEvaluationToken(r){
-    if(r.evaluationToken)return r.evaluationToken;
-    const out=await api('/api/admin/save',{method:'POST',body:JSON.stringify({action:'ensureEvaluationToken',id:r.id})});
-    r.evaluationToken=out.evaluationToken; return r.evaluationToken;
+  function professionalState(r){
+    if(!r.professionalId)return statusPill('Sin profesional');
+    if(r.professionalResponse==='Rechazó')return statusPill('Profesional rechazó');
+    if(r.professionalWork===true)return statusPill('Profesional indicó finalizado');
+    if(r.professionalResponse==='Aceptó')return statusPill('Profesional aceptó');
+    return statusPill('Pendiente');
+  }
+  function clientState(r){
+    const visit=r.clientVisit===true?'✅ Visita':r.clientVisit===false?'❌ No asistió':'⏳ Visita';
+    const work=r.clientWork===true?'✅ Trabajo':r.clientWork===false?'❌ No realizado':'⏳ Trabajo';
+    return `<div class="client-state"><span>${visit}</span><span>${work}</span></div>`;
+  }
+  function assignmentControl(r){
+    const options=app.state.professionals.filter(p=>p.status==='Activo'&&(p.serviceIds||[]).includes(r.serviceId)).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    if(!options)return '<div class="assign-box"><small>No hay profesionales activos para este servicio.</small></div>';
+    return `<div class="assign-box"><select data-assign-select="${esc(r.id)}"><option value="">Elegí profesional</option>${options}</select><button class="mini-btn dispatch-mini" type="button" data-assign-request="${esc(r.id)}">Asignar</button></div>`;
   }
   function renderRequests(){
     const rows=app.requests.filter(requestMatches);
     $('#requestsBody').innerHTML=rows.length?rows.map(r=>{
-      const pro=app.state.professionals.find(p=>p.id===r.professionalId); const rating=r.clientRatingSubmitted?`⭐ ${Number(r.clientStars)||'—'}/5`:'Pendiente';
-      const desc=r.description?`<div class="request-desc">${esc(r.description)}</div>`:''; const gps=r.lat!=null&&r.lng!=null?`<br><a target="_blank" rel="noreferrer" href="https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lng)}">📍 Ver GPS</a>`:'';
-      return `<tr><td><strong>${esc(r.code||'—')}</strong><br><small>${fmtDate(r.createdAt)}</small></td><td><strong>${esc(r.firstName||'')} ${esc(r.lastName||'')}</strong><br><small>${esc(r.whatsapp||'')}</small></td><td>${esc(r.serviceName||'—')}${desc}${r.address?`<div class="request-desc">${esc(r.address)}${gps}</div>`:gps}</td><td><strong>${esc(r.professionalName||pro?.name||'Sin profesional')}</strong></td><td>${statusPill(r.professionalResponse||'Pendiente')}</td><td>${yn(r.clientVisit)}</td><td>${yn(r.clientWork)}</td><td>${rating}</td><td>${statusPill(r.status||'Contacto iniciado')}</td><td><div class="row-actions request-actions"><button class="mini-btn wa-mini" type="button" data-contact-client="${esc(r.id)}">💬 Cliente</button><button class="mini-btn" type="button" data-send-eval="${esc(r.id)}">⭐ Enviar evaluación</button><button class="mini-btn" type="button" data-copy-eval="${esc(r.id)}">🔗 Copiar evaluación</button><button class="mini-btn" type="button" data-open-eval="${esc(r.id)}">👁 Abrir</button></div></td></tr>`;
-    }).join(''):'<tr><td colspan="10">No hay registros para este filtro.</td></tr>';
+      const pro=app.state.professionals.find(p=>p.id===r.professionalId);
+      const rating=r.clientRatingSubmitted?`<div class="rating-admin ok-rating">⭐ ${Number(r.clientStars)||'—'}/5<br><small>Cliente calificó</small></div>`:'<div class="rating-admin pending-rating">⏳ Sin calificar</div>';
+      const desc=r.description?`<div class="request-desc"><strong>📝</strong> ${esc(r.description)}</div>`:'';
+      const gps=r.lat!=null&&r.lng!=null?`<br><a class="gps-admin-link" target="_blank" rel="noreferrer" href="https://www.google.com/maps?q=${encodeURIComponent(r.lat+','+r.lng)}">📍 Ver ubicación GPS</a>`:'';
+      const phone=esc(r.whatsapp||'—');
+      const professionalCell=r.professionalId?`<strong>${esc(r.professionalName||pro?.name||'Profesional')}</strong><br><small>${esc(pro?.whatsapp||'')}</small>`:`<strong class="no-pro-label">Sin profesional</strong>${assignmentControl(r)}`;
+      const evalDisabled=!r.professionalId?' disabled title="Primero asigná un profesional"':'';
+      const proDisabled=!r.professionalId?' disabled title="Primero asigná un profesional"':'';
+      return `<tr><td><strong>${esc(r.code||'—')}</strong><br><small>${fmtDate(r.createdAt)}</small><br><small>${esc(r.channel||'Contacto')}</small></td><td><strong>${esc(r.firstName||'')} ${esc(r.lastName||'')}</strong><div class="client-phone">📱 ${phone}</div><button class="mini-btn wa-mini full-mini" type="button" data-contact-client="${esc(r.id)}">💬 WhatsApp cliente</button></td><td><strong>${esc(r.serviceName||'—')}</strong>${desc}${r.address?`<div class="request-desc"><strong>📌</strong> ${esc(r.address)}${gps}</div>`:gps}</td><td>${professionalCell}</td><td>${professionalState(r)}</td><td>${clientState(r)}</td><td>${rating}</td><td>${statusPill(r.status||'Contacto iniciado')}</td><td><div class="row-actions request-actions"><button class="mini-btn wa-mini" type="button" data-send-eval="${esc(r.id)}"${evalDisabled}>⭐ WhatsApp para calificar</button><button class="mini-btn" type="button" data-copy-eval="${esc(r.id)}"${evalDisabled}>🔗 Copiar acceso</button><button class="mini-btn dispatch-mini" type="button" data-notify-pro="${esc(r.id)}"${proDisabled}>💬 Avisar profesional</button><button class="mini-btn" type="button" data-open-eval="${esc(r.id)}"${evalDisabled}>👁 Abrir Mi solicitud</button><button class="mini-btn red" type="button" data-delete-request="${esc(r.id)}">🗑 Eliminar</button></div></td></tr>`;
+    }).join(''):'<tr><td colspan="9">No hay registros para este filtro.</td></tr>';
     $$('[data-contact-client]').forEach(b=>b.onclick=()=>contactClient(b.dataset.contactClient));
     $$('[data-send-eval]').forEach(b=>b.onclick=()=>sendEvaluation(b.dataset.sendEval));
     $$('[data-copy-eval]').forEach(b=>b.onclick=()=>copyEvaluation(b.dataset.copyEval));
     $$('[data-open-eval]').forEach(b=>b.onclick=()=>openEvaluation(b.dataset.openEval));
+    $$('[data-notify-pro]').forEach(b=>b.onclick=()=>notifyProfessional(b.dataset.notifyPro));
+    $$('[data-assign-request]').forEach(b=>b.onclick=()=>assignProfessional(b.dataset.assignRequest));
+    $$('[data-delete-request]').forEach(b=>b.onclick=()=>deleteRequest(b.dataset.deleteRequest));
   }
+  async function deleteRequest(id){
+    const r=app.requests.find(x=>x.id===id); if(!r)return;
+    const label=r.code?`solicitud ${r.code}`:'esta solicitud';
+    if(!confirm(`¿Eliminar ${label}?\n\nSe borrará también su calificación asociada, si existe.`))return;
+    if(!confirm('Esta acción es permanente y no se puede deshacer. ¿Continuar?'))return;
+    await api('/api/admin/save',{method:'POST',body:JSON.stringify({action:'deleteRequest',id})});
+    await refreshData(`Solicitud ${r.code||''} eliminada`);
+  }
+
   function contactClient(id){const r=app.requests.find(x=>x.id===id);if(!r)return;const phone=cleanPhone(r.whatsapp);if(!phone){alert('El cliente no tiene WhatsApp válido.');return;}window.open(waLink(phone,`Hola ${r.firstName||''}, te contactamos desde Salta Soluciones por tu solicitud ${r.code||''}.`),'_blank','noopener,noreferrer');}
-  async function sendEvaluation(id){const r=app.requests.find(x=>x.id===id);if(!r)return;const phone=cleanPhone(r.whatsapp);if(!phone){alert('El cliente no tiene WhatsApp válido.');return;}const token=await ensureEvaluationToken(r);const url=evaluationUrl(token);const msg=`Hola ${r.firstName||''}. Gracias por utilizar Salta Soluciones. Queremos saber cómo fue tu experiencia con ${r.professionalName||'el profesional'}.\n\nDesde este enlace podés confirmar si asistió, si el trabajo se realizó y calificarlo de 1 a 5 estrellas. No necesitás usuario ni contraseña.\n\n${url}`;window.open(waLink(phone,msg),'_blank','noopener,noreferrer');}
-  async function copyEvaluation(id){const r=app.requests.find(x=>x.id===id);if(!r)return;const token=await ensureEvaluationToken(r);await copyText(evaluationUrl(token),'✓ Enlace de evaluación copiado');}
-  async function openEvaluation(id){const r=app.requests.find(x=>x.id===id);if(!r)return;const token=await ensureEvaluationToken(r);window.open(evaluationUrl(token),'_blank','noopener,noreferrer');}
+  async function assignProfessional(id){
+    const r=app.requests.find(x=>x.id===id);if(!r)return;
+    const select=document.querySelector(`[data-assign-select="${CSS.escape(id)}"]`); const professionalId=select?.value||'';
+    if(!professionalId){alert('Elegí un profesional.');return;}
+    const out=await api('/api/admin/save',{method:'POST',body:JSON.stringify({action:'assignProfessional',id,professionalId})});
+    Object.assign(r,out.request); await refreshData('Profesional asignado');
+  }
+  function notifyProfessional(id){
+    const r=app.requests.find(x=>x.id===id);if(!r||!r.professionalId)return;
+    const p=app.state.professionals.find(x=>x.id===r.professionalId); if(!p)return;
+    const phone=cleanPhone(p.whatsapp); if(!phone){alert('El profesional no tiene WhatsApp válido.');return;}
+    const portal=professionalPortalUrl(p);
+    const gps=r.lat!=null&&r.lng!=null?`\n📍 GPS: https://www.google.com/maps?q=${r.lat},${r.lng}`:'';
+    const msg=`Hola ${p.name}. Tenés una solicitud de Salta Soluciones.\n\nNúmero de solicitud: ${r.code||''}\nServicio: ${r.serviceName||''}\nCliente: ${r.firstName||''} ${r.lastName||''}\nWhatsApp cliente: ${r.whatsapp||''}\nDirección: ${r.address||'A coordinar'}\nDescripción: ${r.description||'Sin descripción'}${gps}\n\nIngresá a tu portal para confirmar si tomás el trabajo o marcarlo finalizado:\n${portal}`;
+    window.open(waLink(phone,msg),'_blank','noopener,noreferrer');
+  }
+  function clientTrackingUrl(r){return `${location.origin}/?codigo=${encodeURIComponent(r.code||'')}#mi-solicitud`;}
+  function sendEvaluation(id){const r=app.requests.find(x=>x.id===id);if(!r)return;if(!r.professionalId){alert('Primero asigná un profesional.');return;}const phone=cleanPhone(r.whatsapp);if(!phone){alert('El cliente no tiene WhatsApp válido.');return;}const url=clientTrackingUrl(r);const msg=`Hola ${r.firstName||''}. Gracias por utilizar Salta Soluciones. Queremos saber cómo fue tu experiencia con ${r.professionalName||'el profesional'}.\n\nTu número de solicitud es: ${r.code||''}\n\nEntrá al enlace, verificá tu solicitud con estos 5 números y el mismo WhatsApp que usaste al pedir el servicio. Ahí podrás confirmar si el profesional asistió, si el trabajo se realizó y calificarlo de 1 a 5 estrellas.\n\n${url}`;window.open(waLink(phone,msg),'_blank','noopener,noreferrer');}
+  async function copyEvaluation(id){const r=app.requests.find(x=>x.id===id);if(!r)return;if(!r.professionalId){alert('Primero asigná un profesional.');return;}await copyText(clientTrackingUrl(r),'✓ Enlace de Mi solicitud copiado');}
+  function openEvaluation(id){const r=app.requests.find(x=>x.id===id);if(!r)return;if(!r.professionalId){alert('Primero asigná un profesional.');return;}window.open(clientTrackingUrl(r),'_blank','noopener,noreferrer');}
   $$('[data-request-filter]').forEach(b=>b.onclick=()=>{app.requestFilter=b.dataset.requestFilter;$$('[data-request-filter]').forEach(x=>x.classList.toggle('active',x===b));renderRequests();});
 
   function renderRatings(){ $('#ratingsBody').innerHTML=app.ratings.length?app.ratings.map(r=>`<tr><td>${fmtDate(r.createdAt)}</td><td>${esc(r.professionalName)}</td><td>${'★'.repeat(Number(r.stars)||0)}${'☆'.repeat(5-(Number(r.stars)||0))}</td><td>${esc(r.comment||'—')}</td><td>${esc(r.requestCode||'—')}</td><td>${statusPill(r.approved===true?'Aprobada':'Pendiente')}</td><td><div class="row-actions"><button class="mini-btn" data-approve="${esc(r.id)}">Aprobar</button><button class="mini-btn red" data-reject="${esc(r.id)}">Ocultar</button></div></td></tr>`).join(''):'<tr><td colspan="7">No hay calificaciones.</td></tr>'; $$('[data-approve]').forEach(b=>b.addEventListener('click',()=>moderateRating(b.dataset.approve,true))); $$('[data-reject]').forEach(b=>b.addEventListener('click',()=>moderateRating(b.dataset.reject,false))); }

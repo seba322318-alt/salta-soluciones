@@ -1,6 +1,6 @@
 (() => {
   const $ = (s) => document.querySelector(s);
-  const state = { data: null, selectedServiceId: '', lat: null, lng: null, tracking: null, trackingStars: 0 };
+  const state = { data: null, selectedServiceId: '', lat: null, lng: null, noProLat: null, noProLng: null, tracking: null, trackingStars: 0 };
   const esc = (v='') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const cleanPhone = (v='') => String(v).replace(/[^0-9]/g,'');
   const waLink = (phone, message='') => `https://wa.me/${cleanPhone(phone)}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
@@ -83,14 +83,49 @@
     const all = state.data.professionals || [], summary = state.data.ratingsSummary || {};
     const list = state.selectedServiceId ? all.filter(p => (p.serviceIds||[]).includes(state.selectedServiceId)) : all;
     const service = state.data.services.find(s=>s.id===state.selectedServiceId);
-    $('#professionalsSubtitle').textContent = service ? `Profesionales disponibles para ${service.name}. Elegí uno y contactalo directamente por WhatsApp.` : 'Elegí un profesional y contactalo directamente por WhatsApp. El contacto queda registrado para seguimiento y calificación.';
+    $('#professionalsSubtitle').textContent = service ? `Profesionales disponibles para ${service.name}. Elegí uno y completá tus datos para enviar dirección, descripción y ubicación antes de abrir WhatsApp.` : 'Elegí un profesional y contactalo directamente por WhatsApp. El contacto queda registrado para seguimiento y calificación.';
     $('#clearProfessionalFilter').classList.toggle('hidden', !state.selectedServiceId);
-    $('#professionalsGrid').innerHTML = list.length ? list.map(p => {
-      const r=summary[p.id];
-      const rating=r?.count?`⭐ ${r.average.toFixed(1).replace('.',',')} <span>· ${r.count} opinión${r.count===1?'':'es'}</span>`:'<span>Sin calificaciones publicadas</span>';
-      return `<article class="pro-card"><div class="pro-top"><div class="avatar">${p.photoUrl?`<img src="${esc(p.photoUrl)}" alt="${esc(p.name)}">`:'👨‍🔧'}</div><div><div class="pro-name">${esc(p.name)}</div><div class="pro-service">${esc(serviceNames(p.serviceIds))}</div></div></div><div class="meta">${Number(p.yearsExperience)||0} años de experiencia<br>${esc(p.zone||'Zona a coordinar')} · ${esc(p.availability||'Consultar disponibilidad')}</div><div class="rating-line">${rating}</div><button type="button" class="primary-btn pro-contact-btn neon-touch" data-pro-contact="${esc(p.id)}">💬 Contactar por WhatsApp</button><small class="contact-register-note">El contacto se registra para permitir seguimiento y calificación.</small></article>`;
-    }).join('') : '<div class="empty">No hay profesionales publicados para este servicio. Podés consultar directamente con Salta Soluciones por WhatsApp.</div>';
-    $('#professionalsGrid').querySelectorAll('[data-pro-contact]').forEach(btn=>btn.addEventListener('click',()=>openContactModal(btn.dataset.proContact)));
+    if (list.length) {
+      $('#professionalsGrid').innerHTML = list.map(p => {
+        const r=summary[p.id];
+        const rating=r?.count?`⭐ ${r.average.toFixed(1).replace('.',',')} <span>· ${r.count} opinión${r.count===1?'':'es'}</span>`:'<span>Sin calificaciones publicadas</span>';
+        return `<article class="pro-card"><div class="pro-top"><div class="avatar">${p.photoUrl?`<img src="${esc(p.photoUrl)}" alt="${esc(p.name)}">`:'👨‍🔧'}</div><div><div class="pro-name">${esc(p.name)}</div><div class="pro-service">${esc(serviceNames(p.serviceIds))}</div></div></div><div class="meta">${Number(p.yearsExperience)||0} años de experiencia<br>${esc(p.zone||'Zona a coordinar')} · ${esc(p.availability||'Consultar disponibilidad')}</div><div class="rating-line">${rating}</div><button type="button" class="primary-btn pro-contact-btn neon-touch" data-pro-contact="${esc(p.id)}">💬 Contactar por WhatsApp</button><small class="contact-register-note">Antes de abrir WhatsApp podés enviar dirección, descripción y GPS. Todo queda registrado.</small></article>`;
+      }).join('');
+      $('#professionalsGrid').querySelectorAll('[data-pro-contact]').forEach(btn=>btn.addEventListener('click',()=>openContactModal(btn.dataset.proContact)));
+      return;
+    }
+    if (service) {
+      const saved=(()=>{try{return JSON.parse(localStorage.getItem('saltaClient')||'{}')}catch{return {}}})();
+      state.noProLat=null; state.noProLng=null;
+      $('#professionalsGrid').innerHTML = `<div class="no-pro-request span-full"><div class="no-pro-head"><div><div class="eyebrow welcome-eyebrow">Solicitud a Salta Soluciones</div><h3>No hay profesionales disponibles para ${esc(service.name)}</h3><p>Dejanos tus datos y la necesidad del servicio. La solicitud llegará al ADMIN para que Salta Soluciones pueda asignarte un profesional cuando haya uno disponible.</p></div><div class="no-pro-icon">📨</div></div><form id="noProRequestForm" class="form-grid"><input id="noProServiceId" type="hidden" value="${esc(service.id)}"><label class="field">Nombre<input id="noProFirstName" required autocomplete="given-name" value="${esc(saved.firstName||'')}"></label><label class="field">Apellido<input id="noProLastName" required autocomplete="family-name" value="${esc(saved.lastName||'')}"></label><label class="field">WhatsApp<input id="noProWhatsApp" required inputmode="tel" autocomplete="tel" value="${esc(saved.whatsapp||'')}"></label><label class="field">Dirección / zona<input id="noProAddress" required autocomplete="street-address" placeholder="Ej.: Barrio, calle y número"></label><label class="field span-2">Descripción del trabajo<textarea id="noProDescription" required placeholder="Explicá qué necesitás para que podamos buscar el profesional adecuado"></textarea></label><div class="span-2 gps-row"><button id="noProGpsBtn" class="gps-btn neon-touch" type="button">📍 Enviar mi ubicación GPS</button><span id="noProGpsStatus" class="gps-status">Opcional, pero recomendado</span></div><label class="span-2 check-row"><input id="noProConsent" type="checkbox" required><span>Acepto que Salta Soluciones use estos datos para contactarme y asignar un profesional.</span></label><div class="span-2"><button class="primary-btn neon-touch" type="submit">✅ Enviar solicitud a Salta Soluciones</button><div id="noProStatus" class="status-msg" aria-live="polite" style="margin-top:9px"></div></div></form></div>`;
+      bindNoProfessionalForm();
+    } else {
+      $('#professionalsGrid').innerHTML = '<div class="empty">No hay profesionales publicados por el momento.</div>';
+    }
+  }
+
+  function bindNoProfessionalForm(){
+    const form=$('#noProRequestForm'); if(!form)return;
+    $('#noProGpsBtn').onclick=()=>{
+      if(!navigator.geolocation){$('#noProGpsStatus').textContent='Tu navegador no admite GPS.';return;}
+      $('#noProGpsStatus').textContent='Solicitando permiso…';
+      navigator.geolocation.getCurrentPosition(pos=>{state.noProLat=pos.coords.latitude;state.noProLng=pos.coords.longitude;$('#noProGpsStatus').textContent='✓ Ubicación GPS agregada';},err=>{$('#noProGpsStatus').textContent=err.code===1?'No autorizaste la ubicación. Podés continuar con la dirección.':'No se pudo obtener la ubicación.';},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+    };
+    form.onsubmit=async e=>{
+      e.preventDefault(); if(!form.reportValidity())return;
+      const btn=form.querySelector('button[type=submit]'); btn.disabled=true; $('#noProStatus').textContent='Enviando solicitud…';
+      const payload={serviceId:$('#noProServiceId').value,firstName:$('#noProFirstName').value,lastName:$('#noProLastName').value,whatsapp:$('#noProWhatsApp').value,address:$('#noProAddress').value,description:$('#noProDescription').value,lat:state.noProLat,lng:state.noProLng,consentContact:$('#noProConsent').checked};
+      try{
+        const out=await jsonFetch('/api/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        localStorage.setItem('saltaClient',JSON.stringify({firstName:payload.firstName,lastName:payload.lastName,whatsapp:payload.whatsapp}));
+        localStorage.setItem('saltaTracking',JSON.stringify({code:out.code,whatsapp:payload.whatsapp}));
+        $('#trackingCode').value=out.code; $('#trackingWhatsApp').value=payload.whatsapp;
+        $('#noProStatus').innerHTML=`✅ Solicitud enviada. Número: <strong>${esc(out.code)}</strong>.<br><small>Salta Soluciones la verá en el panel ADMIN y podrá asignarte un profesional. Guardá el código para consultar el estado.</small>`;
+        form.querySelectorAll('input:not([type=hidden]),textarea').forEach(el=>{if(!['noProFirstName','noProLastName','noProWhatsApp'].includes(el.id))el.value='';});
+        $('#noProConsent').checked=false; state.noProLat=null; state.noProLng=null; $('#noProGpsStatus').textContent='Opcional, pero recomendado';
+      }catch(err){$('#noProStatus').textContent='Error: '+err.message;}
+      finally{btn.disabled=false;}
+    };
   }
 
   $('#clearProfessionalFilter').addEventListener('click',()=>{state.selectedServiceId='';renderServices($('#serviceSearch').value);renderProfessionals();});
@@ -125,7 +160,7 @@
     const saved=JSON.parse(localStorage.getItem('saltaClient')||'{}');
     $('#contactFirstName').value=saved.firstName||''; $('#contactLastName').value=saved.lastName||''; $('#contactWhatsApp').value=saved.whatsapp||'';
     $('#contactAddress').value=''; $('#contactDescription').value=''; $('#contactConsent').checked=false; $('#contactStatus').textContent='';
-    state.lat=null; state.lng=null; $('#contactGpsStatus').textContent='Opcional';
+    state.lat=null; state.lng=null; $('#contactGpsStatus').textContent='Recomendado para ubicar mejor el servicio';
     $('#contactModal').classList.remove('hidden'); document.body.style.overflow='hidden';
   }
   function closeContact(){ $('#contactModal').classList.add('hidden'); document.body.style.overflow=''; }
@@ -159,20 +194,21 @@
   $('#serviceSearch').addEventListener('input',()=>renderServices($('#serviceSearch').value));
 
   function restoreTracking(){
-    try{const saved=JSON.parse(localStorage.getItem('saltaTracking')||'{}');if(saved.code)$('#trackingCode').value=saved.code;if(saved.whatsapp)$('#trackingWhatsApp').value=saved.whatsapp;}catch{}
-    const qs=new URLSearchParams(location.search); const code=qs.get('codigo'); if(code)$('#trackingCode').value=code;
+    try{const saved=JSON.parse(localStorage.getItem('saltaTracking')||'{}');if(saved.code)$('#trackingCode').value=String(saved.code).replace(/[^0-9]/g,'').slice(0,5);if(saved.whatsapp)$('#trackingWhatsApp').value=saved.whatsapp;}catch{}
+    const qs=new URLSearchParams(location.search); const code=qs.get('codigo'); if(code)$('#trackingCode').value=String(code).replace(/[^0-9]/g,'').slice(0,5);
   }
 
+  $('#trackingCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^0-9]/g,'').slice(0,5);});
   $('#trackingForm').addEventListener('submit',async e=>{e.preventDefault();await lookupTracking();});
   async function lookupTracking(message=''){
-    const code=$('#trackingCode').value.trim(), whatsapp=$('#trackingWhatsApp').value.trim(); if(!code||!whatsapp)return;
+    const code=$('#trackingCode').value.replace(/[^0-9]/g,'').slice(0,5), whatsapp=$('#trackingWhatsApp').value.trim(); if(!/^\d{5}$/.test(code)){ $('#trackingStatus').textContent='Ingresá los 5 números de tu solicitud.'; return; } if(!whatsapp){ $('#trackingStatus').textContent='Ingresá el mismo WhatsApp usado en la solicitud.'; return; } $('#trackingCode').value=code;
     $('#trackingStatus').textContent='Consultando…';
     try{const out=await jsonFetch('/api/client-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'lookup',code,whatsapp})}); state.tracking=out.request; localStorage.setItem('saltaTracking',JSON.stringify({code,whatsapp})); $('#trackingStatus').textContent=message; renderTracking();}
     catch(err){state.tracking=null;$('#trackingResult').innerHTML='<div class="empty">No se pudo mostrar la solicitud.</div>';$('#trackingStatus').textContent='Error: '+err.message;}
   }
 
   async function trackingAction(action,value){
-    const code=$('#trackingCode').value.trim(), whatsapp=$('#trackingWhatsApp').value.trim();
+    const code=$('#trackingCode').value.replace(/[^0-9]/g,'').slice(0,5), whatsapp=$('#trackingWhatsApp').value.trim();
     try{const out=await jsonFetch('/api/client-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,code,whatsapp,value})});state.tracking=out.request;renderTracking();}
     catch(err){alert(err.message);}
   }
@@ -183,7 +219,7 @@
     const ratingText=r.clientRatingSubmitted?`⭐ ${r.clientStars}/5`:'Pendiente';
     $('#trackingResult').innerHTML=`<div class="track-head"><div><div class="eyebrow welcome-eyebrow">${esc(r.code)}</div><h3>${esc(r.serviceName)}</h3><p>${esc(r.professionalName||'Profesional')}</p></div><span class="track-status">${esc(r.status||'Contacto iniciado')}</span></div>
       <div class="track-steps"><div class="track-step done"><span>1</span><div><strong>Contacto iniciado</strong><small>${r.createdAt?new Date(r.createdAt).toLocaleString('es-AR'):''}</small></div></div><div class="track-step ${r.clientVisit===true?'done':r.clientVisit===false?'bad':''}"><span>2</span><div><strong>¿El profesional asistió?</strong><small>${yesNo(r.clientVisit)}</small></div></div><div class="track-step ${r.clientWork===true?'done':r.clientWork===false?'bad':''}"><span>3</span><div><strong>¿El trabajo se realizó?</strong><small>${yesNo(r.clientWork)}</small></div></div><div class="track-step ${r.clientRatingSubmitted?'done':''}"><span>4</span><div><strong>Calificación</strong><small>${ratingText}</small></div></div></div>
-      <div class="track-actions">${r.clientVisit==null?`<p><strong>¿El profesional asistió o te atendió?</strong></p><div class="answer-buttons"><button class="primary-btn" data-visit="true" type="button">✅ Sí, asistió</button><button class="outline-btn danger-outline" data-visit="false" type="button">❌ No asistió</button></div>`:''}${r.clientVisit===true&&r.clientWork==null?`<p><strong>¿El trabajo quedó realizado?</strong></p><div class="answer-buttons"><button class="primary-btn" data-work="true" type="button">✅ Sí, finalizado</button><button class="outline-btn danger-outline" data-work="false" type="button">❌ No se realizó</button></div>`:''}${r.clientVisit===false?'<div class="tracking-note">Registramos que el profesional no asistió. Esta información queda visible para Salta Soluciones.</div>':''}${r.clientWork===false?'<div class="tracking-note">Registramos que el trabajo no se concretó.</div>':''}${r.clientWork===true&&!r.clientRatingSubmitted?ratingBox():''}${r.clientRatingSubmitted?'<div class="tracking-note success-note">✅ Gracias. Tu calificación quedó enviada y será revisada antes de publicarse.</div>':''}</div>`;
+      <div class="track-actions">${!r.hasProfessional?'<div class="tracking-note"><strong>⏳ Salta Soluciones está buscando un profesional para tu solicitud.</strong><br>Cuando se asigne uno, aparecerá acá y podrás confirmar la visita y el trabajo.</div>':`${r.clientVisit==null?`<p><strong>¿El profesional asistió o te atendió?</strong></p><div class="answer-buttons"><button class="primary-btn" data-visit="true" type="button">✅ Sí, asistió</button><button class="outline-btn danger-outline" data-visit="false" type="button">❌ No asistió</button></div>`:''}${r.clientVisit===true&&r.clientWork==null?`<p><strong>¿El trabajo quedó realizado?</strong></p><div class="answer-buttons"><button class="primary-btn" data-work="true" type="button">✅ Sí, finalizado</button><button class="outline-btn danger-outline" data-work="false" type="button">❌ No se realizó</button></div>`:''}${r.clientVisit===false?'<div class="tracking-note">Registramos que el profesional no asistió. Esta información queda visible para Salta Soluciones.</div>':''}${r.clientWork===false?'<div class="tracking-note">Registramos que el trabajo no se concretó.</div>':''}${r.clientWork===true&&!r.clientRatingSubmitted?ratingBox():''}${r.clientRatingSubmitted?'<div class="tracking-note success-note">✅ Gracias. Tu calificación quedó enviada y será revisada antes de publicarse.</div>':''}`}</div>`;
     $('#trackingResult').querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>trackingAction('confirmVisit',b.dataset.visit==='true'));
     $('#trackingResult').querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>trackingAction('confirmWork',b.dataset.work==='true'));
     initTrackingStars();

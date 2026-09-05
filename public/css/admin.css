@@ -28,3 +28,6 @@ body.admin-body{background:var(--admin-bg);color:#0b2a52}.admin-shell{display:gr
 .portal-actions,.request-actions{min-width:150px;align-items:flex-start}
 .portal-actions .mini-btn,.request-actions .mini-btn{white-space:nowrap}
 .requests-table td:last-child{min-width:180px}
+
+/* Solicitudes V3: WhatsApp visible, asignación y estados claros */
+.requests-table{min-width:1350px}.client-phone{margin:6px 0 7px;font-weight:800;color:#0b5f43}.full-mini{width:100%}.client-state{display:grid;gap:5px;font-size:12px;white-space:nowrap}.rating-admin{font-weight:850;line-height:1.35;white-space:nowrap}.rating-admin small{font-weight:600}.ok-rating{color:#08783e}.pending-rating{color:#8a6a18}.no-pro-label{color:#a44b16}.assign-box{display:grid;gap:6px;margin-top:8px;min-width:190px}.assign-box select{width:100%;border:1px solid var(--admin-line);border-radius:8px;padding:8px;background:#fff;color:#173556}.assign-box small{color:var(--admin-muted);line-height:1.35}.gps-admin-link{font-weight:800;color:#0877e8;text-decoration:none}.request-actions button:disabled{opacity:.45;cursor:not-allowed}.requests-table .request-actions{grid-template-columns:1fr;min-width:190px}

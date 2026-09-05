@@ -42,3 +42,11 @@ main{padding:30px 0 52px}.section{margin-top:26px}.section:first-child{margin-to
 .seo-step strong{font-size:18px;color:#062957}.seo-step p,.faq-item p{color:#61758b;line-height:1.6;margin-bottom:0}
 .faq-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.faq-item h3{margin:0 0 8px;color:#062957;font-size:17px}
 @media(max-width:760px){.seo-steps,.faq-grid{grid-template-columns:1fr}}
+
+/* Solicitud cuando no hay profesional disponible */
+.span-full{grid-column:1/-1}.no-pro-request{background:#fff;border:1px solid #cfe1f1;border-radius:18px;padding:22px;box-shadow:0 10px 28px rgba(4,54,101,.07);text-align:left}.no-pro-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.no-pro-head h3{margin:4px 0 8px;color:#062957;font-size:22px}.no-pro-head p{margin:0;color:#60768c;line-height:1.55}.no-pro-icon{width:58px;height:58px;border-radius:15px;background:#eff9ff;display:grid;place-items:center;font-size:28px;flex:0 0 auto}.no-pro-request .primary-btn{width:100%}@media(max-width:620px){.no-pro-head{display:block}.no-pro-icon{display:none}}
+
+/* Consulta de solicitud simple: código de 5 dígitos + WhatsApp */
+.field-hint{font-weight:600;color:#718399;font-size:.82rem}
+.field-help{display:block;margin-top:6px;color:#718399;font-size:.78rem;font-weight:500}
+#trackingCode{font-size:1.15rem;font-weight:800;letter-spacing:.16em;font-variant-numeric:tabular-nums}

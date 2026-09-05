@@ -1,5 +1,6 @@
 import { getStore } from "@netlify/blobs";
 import { getState } from "./_state.mjs";
+import { generateUniqueRequestCode } from "./_request-code.mjs";
 
 const text = (v, max = 500) => String(v || "").trim().slice(0, max);
 const digits = (v) => String(v || "").replace(/[^0-9]/g, "");
@@ -17,7 +18,9 @@ export default async (req) => {
   const firstName = text(body.firstName, 80);
   const lastName = text(body.lastName, 80);
   const whatsapp = text(body.whatsapp, 40).replace(/[^0-9+]/g, "");
-  if (!firstName || !lastName || !digits(whatsapp)) return Response.json({ error: "Completá nombre, apellido y WhatsApp" }, { status: 400 });
+  const address = text(body.address, 220);
+  const description = text(body.description, 1200);
+  if (!firstName || !lastName || !digits(whatsapp) || !address || !description) return Response.json({ error: "Completá nombre, apellido, WhatsApp, dirección y descripción" }, { status: 400 });
   if (body.consentContact !== true) return Response.json({ error: "Debés aceptar el registro del contacto" }, { status: 400 });
   const proPhone = digits(professional.whatsapp);
   if (!proPhone) return Response.json({ error: "El profesional todavía no tiene un WhatsApp válido cargado" }, { status: 400 });
@@ -25,11 +28,12 @@ export default async (req) => {
   const id = crypto.randomUUID();
   const evaluationToken = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
   const now = new Date();
-  const code = `SS-${now.toISOString().slice(0, 10).replaceAll("-", "")}-${id.slice(0, 5).toUpperCase()}`;
+  const index = getStore({ name: "salta-request-index", consistency: "strong" });
+  const code = await generateUniqueRequestCode(index);
   const record = {
     id, code, createdAt: now.toISOString(), contactOpenedAt: now.toISOString(), channel: "WhatsApp directo",
     firstName, lastName, whatsapp, clientWhatsappDigits: digits(whatsapp),
-    address: text(body.address, 220), description: text(body.description, 1200),
+    address, description,
     serviceId: service.id, serviceName: service.name,
     professionalId: professional.id, professionalName: professional.name,
     lat: Number.isFinite(Number(body.lat)) ? Number(body.lat) : null,
@@ -40,7 +44,6 @@ export default async (req) => {
     updatedAt: now.toISOString()
   };
   const store = getStore({ name: "salta-requests", consistency: "strong" });
-  const index = getStore({ name: "salta-request-index", consistency: "strong" });
   const evaluationIndex = getStore({ name: "salta-evaluation-index", consistency: "strong" });
   await store.setJSON(id, record);
   await index.setJSON(code, { id });
@@ -48,9 +51,9 @@ export default async (req) => {
 
   const origin = new URL(req.url).origin;
   const gps = record.lat != null && record.lng != null ? `\n📍 Ubicación: https://www.google.com/maps?q=${record.lat},${record.lng}` : "";
-  const address = record.address ? `\n📌 Zona / dirección: ${record.address}` : "";
+  const addressLine = record.address ? `\n📌 Zona / dirección: ${record.address}` : "";
   const detail = record.description ? `\n📝 Necesito: ${record.description}` : "";
-  const message = `Hola ${professional.name}. Te contacto mediante Salta Soluciones.\n\n🔧 Servicio: ${service.name}\n👤 Soy: ${firstName} ${lastName}${address}${detail}${gps}\n\nCódigo de contacto: ${code}\n\nCoordinamos directamente por acá. Gracias.`;
+  const message = `Hola ${professional.name}. Te contacto mediante Salta Soluciones.\n\n🔧 Servicio: ${service.name}\n👤 Soy: ${firstName} ${lastName}${addressLine}${detail}${gps}\n\nNúmero de solicitud: ${code}\n\nCoordinamos directamente por acá. Gracias.`;
   const whatsappUrl = `https://wa.me/${proPhone}?text=${encodeURIComponent(message)}`;
   return Response.json({ ok: true, code, professionalName: professional.name, whatsappUrl, trackingUrl: `${origin}/?codigo=${encodeURIComponent(code)}#mi-solicitud` });
 };
