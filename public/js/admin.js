@@ -21,7 +21,7 @@
     if (res.status===401) { location.href='/acceso.html'; throw new Error('Sesión vencida'); }
     const out = await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.error||'Error de servidor'); return out;
   }
-  async function loadAll(){ const out=await api('/api/admin/data'); app.state=out.state; app.requests=out.requests||[]; app.ratings=out.ratings||[]; fillHome(); renderAll(); if(out.initialCleanupPerformed) setTimeout(()=>alert('✓ Se eliminaron los registros de prueba anteriores. Profesionales, servicios, productos y configuración se conservaron.'),150); }
+  async function loadAll(){ const out=await api('/api/admin/data'); app.state=out.state; app.requests=out.requests||[]; app.ratings=out.ratings||[]; fillHome(); renderAll(); }
   async function persistState(){ saveIndicator('Guardando…'); const out=await api('/api/admin/save',{method:'POST',body:JSON.stringify({action:'saveState',state:app.state})}); app.state=out.state; renderAll(); saveIndicator('✓ Guardado'); }
   async function uploadFile(file){ if(!file)return ''; const fd=new FormData(); fd.append('file',file); const out=await api('/api/admin/upload',{method:'POST',body:fd}); return out.url; }
 
@@ -41,7 +41,7 @@
   ['setHeroTitle','setHeroHighlight','setHeroSubtitle','setHeroStart','setHeroEnd','setTitleColor','setHighlightColor','setGlow'].forEach(id=>$('#'+id).addEventListener('input',previewHome));
   $('#saveHome').addEventListener('click',async()=>{
     const s=app.state.settings;
-    Object.assign(s,{brandName:$('#setBrand').value,tagline:$('#setTagline').value,heroTitle:$('#setHeroTitle').value,heroHighlight:$('#setHeroHighlight').value,whatsapp:$('#setWhatsapp').value,heroSubtitle:$('#setHeroSubtitle').value,searchPlaceholder:$('#setSearchPlaceholder').value,welcomeTitle:$('#setWelcomeTitle').value,welcomeText:$('#setWelcomeText').value,servicesTitle:$('#setServicesTitle').value,servicesSubtitle:$('#setServicesSubtitle').value,heroStart:$('#setHeroStart').value,heroEnd:$('#setHeroEnd').value,titleColor:$('#setTitleColor').value,highlightColor:$('#setHighlightColor').value,glow:Number($('#setGlow').value),showProfessionals:$('#showPros').checked,showProducts:$('#showProducts').checked});
+    Object.assign(s,{brandName:$('#setBrand').value,tagline:$('#setTagline').value,heroTitle:$('#setHeroTitle').value,heroHighlight:$('#setHeroHighlight').value,whatsapp:$('#setWhatsapp').value,heroSubtitle:$('#setHeroSubtitle').value,searchPlaceholder:$('#setSearchPlaceholder').value,welcomeTitle:$('#setWelcomeTitle').value,welcomeText:$('#setWelcomeText').value,servicesTitle:$('#setServicesTitle').value,servicesSubtitle:$('#setServicesSubtitle').value,heroStart:$('#setHeroStart').value,heroEnd:$('#setHeroEnd').value,titleColor:$('#setTitleColor').value,highlightColor:$('#setHighlightColor').value,glow:Number($('#setGlow').value),showProfessionals:$('#showPros').checked,showProducts:$('#showProducts').checked,showRatings:s.showRatings!==false});
     const file=$('#logoFile').files[0]; if(file){saveIndicator('Subiendo logo…');s.logoUrl=await uploadFile(file);$('#setLogoUrl').value=s.logoUrl;$('#logoFile').value='';}
     await persistState(); alert('Página principal actualizada.');
   });

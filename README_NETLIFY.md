@@ -101,3 +101,12 @@ El profesional no califica al cliente: confirma si tomó, rechazó o finalizó e
 - La limpieza NO borra configuración, profesionales, servicios, productos ni imágenes.
 - Cada solicitud tiene ahora un botón **Eliminar** en ADMIN. El borrado elimina también el índice del código, el acceso de evaluación y la calificación vinculada.
 - La limpieza inicial tiene un marcador persistente (`salta-maintenance`) para que no vuelva a ejecutarse en despliegues posteriores.
+
+
+## V6 — corrección del panel ADMIN
+
+- Se eliminó la limpieza automática de solicitudes.
+- La configuración de Página principal NO se borra al administrar solicitudes.
+- Los campos principales vacíos se recuperan con los valores conocidos de Salta Soluciones.
+- El botón `🗑 Eliminar` borra únicamente la solicitud elegida y sus datos asociados.
+- Servicios, profesionales, productos y configuración permanecen intactos.
